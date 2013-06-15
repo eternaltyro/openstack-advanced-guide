@@ -1,0 +1,25 @@
+OpenStack Beginner's Guide for Ubuntu 12.04, Precise Pangolin
+=============================================================
+
+Copy Right: CSS Corp Private Limited ( http://www.csscorp.com/ ), 2012
+
+This is a tutorial style Beginner's guide for OpenStack on Ubuntu 12.04. 
+The aim is to help the reader in setting up a minimal installation of OpenStack.
+The content is released under Creative Commons - Share Alike Attribution License.
+
+The beginner's guide has been written using DocBook 5.0
+
+Each chapter has a dedicated DocBook source file.
+
+Layout of the source:
+---------------------
+    openstackbook
+            |
+            |_ images - contains images used in this guide
+            |
+            |_ *.xml - DocBook source for the chapter
+            |
+            |_ README - this file
+
+
+Please file bugs/feature requests at https://bugs.launchpad.net/openstackbook

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns:db="http://docbook.org/ns/docbook" xmlns="http://docbook.org/ns/docbook" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="Image_Management-d1e1252" version="5.0" xml:base="Image.xml">
+<title>Image Management</title>
+<section xml:id="Introduction-d1e1257">
+<title>Introduction</title>
+<para> There are several pre-built images for OpenStack available from  various sources. You can download such images and use them to get familiar with OpenStack.</para>
+<para>For any production deployment, you may like to have the ability to bundle custom images, with a custom set of applications or configuration. This chapter will guide you through the process of creating Linux images of popular distributions from scratch. We have also covered an approach to bundling Windows images.</para>
+<para>There are some minor differences in the way you would bundle a Linux image, based on the distribution. Ubuntu makes it very easy by providing cloud-init package, which can be used to take care of the instance configuration at the time of launch. cloud-init handles importing ssh keys for password-less login, setting host name etc. The instance acquires the instance specific configuration from Nova-compute by connecting to a meta data interface running on 169.254.169.254.</para>
+<para>While creating the image of a distro that does not have cloud-init or an equivalent package, you may need to take care of importing the keys etc. by running a set of commands at boot time from rc.local.</para>
+<para>The process used for creating the Linux images of different distributions is largely the same with a few minor differences, which is explained below.</para>
+<para>In all the cases, the documentation below assumes that you have a working KVM installation to use for creating the images. We are using the machine called 'client1' as explained in the chapter on "Installation and Configuration" for this purpose.</para>
+<para>The approach explained below will generate disk images that represent a disk without any partitions.</para>
+</section>
+<section xml:id="Creating_a_Linux_Image-d1e1287">
+<title>Creating a Linux Image</title>
+<para>The first step would be to create an image on Client1. This will represent the main HDD of the virtual machine, so make sure to give it as much space as you will need.</para>
+<programlisting> 
+kvm-img create -f qcow2 server.img 5G
+</programlisting>
+<section xml:id="OS_Installation-d1e1298">
+<title>OS Installation</title>
+<para>Download the iso file of the Linux distribution you want to install in the image. For Ubuntu, you can download the iso from <link xlink:href="http://releases.ubuntu.com">http://releases.ubuntu.com</link> using 'wget' or with the help of a browser</para>
+<para>Boot a KVM instance with the OS installer ISO in the virtual CD-ROM. This will start the installation process. The command below also sets up a VNC display at port 0</para>
+<programlisting> 
+sudo kvm -m 256 -cdrom ubuntu-12.04-server-amd64.iso -drive file=server.img,if=virtio,index=0 -boot d -net nic -net user -nographic  -vnc :0
+</programlisting> 
+<para>Connect to the VM through VNC (use display number :0) and finish the installation.</para>
+<para>For Example,  where 10.10.10.4 is the IP address of client1:</para>
+<programlisting> 
+vncviewer 10.10.10.4 :0
+</programlisting> 
+<para>During the installation of Ubuntu, create a single ext4 partition mounted on '/'. Do not create a swap partition.</para>
+<para>After finishing the installation, relaunch the VM by executing the following command.</para>
+<programlisting> 
+sudo kvm -m 256 -drive file=server.img,if=virtio,index=0 -boot c -net nic -net user -nographic -vnc :0
+</programlisting>    
+<para>At this point, you can add all the packages you want to have installed, update the installation, add users and make any configuration changes you want in your image.</para> 
+
+<section xml:id="Ubuntu-d1e1386">
+<title>Ubuntu</title>
+<programlisting> 
+sudo apt-get update
+</programlisting> 
+<programlisting> 
+sudo apt-get upgrade
+</programlisting> 
+<programlisting> 
+sudo apt-get install openssh-server cloud-init
+</programlisting>
+<para>Remove the network persistence rules from /etc/udev/rules.d as their presence will result in the network interface in the instance coming up as an interface other than eth0.</para>
+<programlisting> 
+sudo rm -rf /etc/udev/rules.d/70-persistent-net.rules
+</programlisting>
+</section>
+<section xml:id="Fedora-d1e1585">
+<title>Fedora</title>
+<programlisting> 
+yum update
+</programlisting> 
+<programlisting> 
+yum install openssh-server
+</programlisting> 
+<programlisting> 
+chkconfig sshd on
+</programlisting>
+<para>Edit the file /etc/sysconfig/network-scripts/ifcfg-eth0 to look like this</para>
+<programlisting>
+DEVICE="eth0"
+BOOTPROTO=dhcp
+NM_CONTROLLED="yes"
+ONBOOT="yes"
+</programlisting>
+<para>Remove the network persistence rules from /etc/udev/rules.d as their presence will result in the network interface in the instance coming up as an interface other than eth0.</para>
+<programlisting> 
+sudo rm -rf /etc/udev/rules.d/70-persistent-net.rules
+</programlisting>
+<para>Shutdown the virtual machine.</para>
+<para>Since, Fedora does not ship with cloud-init or an equivalent, you will need to take a few steps to have the instance  fetch the meta data like ssh keys etc.</para>
+<para>Edit the /etc/rc.local file and add the following lines before the line "touch /var/lock/subsys/local"</para>
+<programlisting> 
+depmod -a
+modprobe acpiphp
+# simple attempt to get the user ssh key using the meta-data service
+mkdir -p /root/.ssh
+echo &gt;&gt; /root/.ssh/authorized_keys
+curl -m 10 -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key| grep 'ssh-rsa' &gt;&gt; /root/.ssh/authorized_keys
+echo "AUTHORIZED_KEYS:"
+echo "************************"
+cat /root/.ssh/authorized_keys
+echo "************************"
+</programlisting> 
+</section>
+<section xml:id="OpenSUSE-de1590">
+<title>OpenSUSE</title>
+<para>Select ssh server, curl and other packages needed.</para>
+<para>Install ssh server.</para>
+<programlisting>zypper install openssh</programlisting>
+<para>Install curl.</para>
+<programlisting>zypper install curl</programlisting>
+<para>For ssh key injection into the instance use the following steps:</para>
+<para>Create a file /etc/init.d/sshkey and add the following lines</para>
+<programlisting>
+echo >> /root/.ssh/authorized_keys
+curl -m 10 -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key | grep 'ssh-rsa' >> /root/.ssh/authorized_keys
+echo "AUTHORIZED_KEYS:"
+echo "************************"
+cat /root/.ssh/authorized_keys
+echo "************************"
+</programlisting>
+<para>Change the permissions for the file.</para>
+<programlisting>chmod 755 /etc/init.d/sshkey</programlisting>
+<para>Configure the service to start automatically while booting.</para>
+<programlisting>chkconfig sshkey on</programlisting>
+<para>Configure the firewall (not iptables) using the following command and allow ssh service</para>
+<programlisting>yast2</programlisting>
+<para>Also remove the network persistence rules from /etc/udev/rules.d as their presence will result in the network interface in the instance coming up as an interface other than eth0.</para>
+<programlisting>rm -rf /etc/udev/rules.d/70-persistent-net.rules</programlisting>
+</section>
+<section xml:id="Debian-de1591">
+<title>Debian</title>
+<para>Select SSH server, Curl and other packages needed.</para>
+<para>Do the necessary changes needed for the image. For key injection add the following lines in the file /etc/rc.local.</para>
+<programlisting>
+echo >> /root/.ssh/authorized_keys
+curl -m 10 -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key | grep 'ssh-rsa' >> /root/.ssh/authorized_keys
+echo "AUTHORIZED_KEYS:"
+echo "************************"
+cat /root/.ssh/authorized_keys
+echo "************************"
+</programlisting>
+<para>Also remove the network persistence rules from /etc/udev/rules.d as their presence will result in the network interface in the instance coming up as an interface other than eth0.</para>
+<programlisting>rm -rf /etc/udev/rules.d/70-persistent-net.rules</programlisting>
+</section>
+<section xml:id="CentOS-de1592">
+<title>CentOS 6 and RHEL 6</title>
+<para>Select SSH server, Curl and other packages needed.</para>
+<para>Do the necessary changes needed for the image. For key injection add the following lines in the file /etc/rc.local.</para>
+<programlisting>
+echo >> /root/.ssh/authorized_keys
+curl -m 10 -s http://169.254.169.254/latest/meta-data/public-keys/0/openssh-key | grep 'ssh-rsa' >> /root/.ssh/authorized_keys
+echo "AUTHORIZED_KEYS:"
+echo "************************"
+cat /root/.ssh/authorized_keys
+echo "************************"
+</programlisting>
+<para>Edit the file /etc/sysconfig/network-scripts/ifcfg-eth0 to look like this</para>
+<programlisting>
+DEVICE="eth0"
+BOOTPROTO=dhcp
+NM_CONTROLLED="yes"
+ONBOOT="yes"
+</programlisting>
+<para>Remove the network persistence rules from /etc/udev/rules.d as their presence will result in the network interface in the instance coming up as an interface other than eth0.</para>
+<programlisting>rm -rf /etc/udev/rules.d/70-persistent-net.rules</programlisting>
+</section>
+</section>
+<section xml:id="Uploading_the_Linux_Image-de1593">
+<title>Uploading the Linux image</title>
+<para>Upload the image</para>
+<programlisting>glance add name="&lt;Image name&gt;" is_public=true container_format=ovf disk_format=qcow2 &lt; &lt;filename&gt;.img</programlisting>
+</section>
+</section>
+
+<section xml:id="Creating_a_Windows_Image-d1e1594">
+<title>Creating a Windows Image</title>
+<para>The first step would be to create an image on Client1, this will represent the main HDD of the virtual machine, so make sure to give it as much space as you will need.</para>
+<programlisting> 
+kvm-img create -f qcow2 windowsserver.img 20G
+</programlisting> 
+<section xml:id="OS_Installation-d1e1596">
+<title>OS Installation</title>
+<para>OpenStack presents the disk using a virtio interface while launching the instance. Hence the OS needs to have drivers for virtio. By default, the Windows Server 2008 ISO does not have the drivers for virtio. Download the iso image containing virtio drivers from the following location <link xlink:href="http://alt.fedoraproject.org/pub/alt/virtio-win/latest/images/bin">http://alt.fedoraproject.org/pub/alt/virtio-win/latest/images/bin</link> and attach it during the installation</para>
+<para>Start the installation by executing:</para>
+<programlisting>
+sudo kvm -m 1024 -cdrom windows2008.iso -drive file=windowsserver1.img,if=virtio -boot d -drive file=virtio-win-0.1-22.iso,index=3,media=cdrom  -device virtio-net-pci -net nic -net user -nographic -vnc :5
+</programlisting>
+<para>When the installation prompts you to choose a hard disk device you won't see any devices available. Click on "Load drivers" at the bottom left and load the drivers by browsing the secondary CDROM in which the virtio driver disk is loaded</para>
+<para>After the installation is over, boot into it once and install any additional applications you need to install and make any configuration changes you need to make. Also ensure that RDP is enabled as that would be the only way you can connect to a running instance of Windows. Windows firewall needs to be configured to allow incoming ICMP and RDP connections.</para>
+<section xml:id="Uploading_the_Windows_Image-de1599">
+<title>Uploading the Windows image</title>
+<para>Shut-down the VM and upload the image to OpenStack</para>
+<programlisting> 
+glance add name="windows" is_public=true container_format=ovf disk_format=qcow2 &lt; windowsserver.img
+</programlisting>
+</section>
+</section>
+</section>
+</chapter>
