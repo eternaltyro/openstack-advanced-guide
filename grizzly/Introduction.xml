@@ -2,7 +2,7 @@
 	<title>Introduction to OpenStack and Its Components</title>
 	<section xml:id="Cloud_Computing-d1e64">
 		<title>Cloud Computing</title>
-		<para>Cloud computing is a computing model, where resources such as computing power, storage, network and software are abstracted and provided as services on the Internet on demand in a remotely accessible fashion. Billing models for these services are generally similar to the ones adopted for public utilities. On-demand availability, ease of provisioning, dynamic and virtually infinite scalability are some of the key attributes of cloud computing.</para>
+		<para>Cloud computing is a computing model, where resources such as computing power, storage, network and software are abstracted and provided as services on the Internet in a remotely accessible fashion. Billing models for these services are generally similar to the ones adopted for public utilities. On-demand availability, ease of provisioning, dynamic and virtually infinite scalability are some of the key attributes of cloud computing.</para>
 		<para>An infrastructure setup using the cloud computing model is generally referred to as the "cloud". The following are the broad categories of services available on the cloud:</para>
 		<itemizedlist>
 			<listitem><para>Infrastructure as a Service (IaaS)</para></listitem>
@@ -13,29 +13,16 @@
 	<section xml:id="OpenStack-d1e94">
 		<title>OpenStack</title>
 		<para>OpenStack is a collection of open source software projects that enterprises/service providers can use to setup and run their cloud compute and storage infrastructure. Rackspace and NASA are the key initial contributors to the stack. Rackspace contributed their "Cloud Files" platform (code) to power the Object Storage part of the OpenStack, while NASA contributed their "Nebula" platform (code) to power the Compute part.  OpenStack consortium has managed to have more than 150 members including Canonical, Dell, Citrix etc.</para>
-		<para>There are 5 main service families under OpenStack</para>
+		<para>There are 7 main service families under OpenStack</para>
 		<itemizedlist>
 			<listitem><para>Nova - Compute Service</para></listitem>
 			<listitem><para>Swift - Storage Service</para></listitem>
 			<listitem><para>Glance - Imaging Service</para></listitem>
 			<listitem><para>Keystone - Identity Service</para></listitem>
+			<listitem><para>Quantum - Network Service</para></listitem>
+			<listitem><para>Cinder - Volume Service</para></listitem>
 			<listitem><para>Horizon - UI Service</para></listitem>
-			<listitem><para>Quantum - Networking Service</para></listitem>
-			<listitem><para>Cinder - Block Storage Service</para></listitem>
         </itemizedlist>
-<para>The diagram below shows a simple representation of interaction between keystone and dashboard with the remaining OpenStack components.</para>
-<para>
-<mediaobject>
-		<imageobject role="fo">
-			<imagedata fileref="images/keystone_dashboard.png"
-				format="PNG" scale="9"/>
-		</imageobject>
-		<imageobject role="html">
-			<imagedata fileref="images/keystone_dashboardhtml.png"
-				format="PNG" />
-		</imageobject>
-</mediaobject>
-</para>
 <para>
 <mediaobject>
 		<imageobject role="fo">
@@ -44,6 +31,19 @@
 		</imageobject>
 		<imageobject role="html">
 			<imagedata fileref="images/architecturehtml.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<para>The below diagram shows a simple representation of interaction between keystone and dashboard with the remaining OpenStack components.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+			<imagedata fileref="images/keystone_dashboard.png"
+				format="PNG" scale="9"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/keystone_dashboardhtml.png"
 				format="PNG" />
 		</imageobject>
 </mediaobject>
@@ -70,8 +70,6 @@
 			<listitem><para>API Server (nova-api)</para></listitem>
 			<listitem><para>Message Queue (rabbit-mq server)</para></listitem>
 			<listitem><para>Compute Workers (nova-compute)</para></listitem>
-			<listitem><para>Network Controller (nova-network)</para></listitem>
-			<listitem><para>Volume Worker (nova-volume)</para></listitem>
 			<listitem><para>Scheduler (nova-scheduler)</para></listitem>
 		</itemizedlist>
 <section xml:id="API_Server_nova-api_-d1e213">
@@ -80,40 +78,39 @@
 	</section>
     <section xml:id="Message_Queue_Rabbit_MQ_Server_-d1e223">
 		<title>Message Queue (Rabbit MQ Server)</title>
-        <para>OpenStack components communicate among themselves using the message queue via AMQP(Advanced Message Queue Protocol). Nova uses asynchronous calls for request response, with a call-back that gets triggered once a response is received. Since asynchronous communication is used, none of the user actions get stuck for long in a waiting state. This is effective since many actions expected by the API calls such as launching an instance or uploading an image are time consuming.</para>
+        <para>OpenStack communicates among themselves using the message queue via AMQP(Advanced Message Queue Protocol). Nova uses asynchronous calls for request response, with a call-back that gets triggered once a response is received. Since asynchronous communication is used, none of the user actions get stuck for long in a waiting state. This is effective since many actions expected by the API calls such as launching an instance or uploading an image are time consuming.</para>
     </section>
     <section xml:id="Compute_Worker_nova-compute_-d1e232">
 		<title>Compute Worker (nova-compute)</title>
-		<para>Compute workers deal with instance management life cycle based on the scheduling algorithm used by nova-scheduler. They receive the requests for instance life cycle management via the Message Queue and carry out operations. There are several compute workers in a typical production cloud deployment. An instance is deployed on any of the available compute worker based on the scheduling algorithm used.</para>
-    </section>
-    <section xml:id="Network_Controller_nova-network_-d1e241">
-		<title>Network Controller (nova-network) (need to be changed to Quantum)</title>
-		<para>The Network Controller deals with the network configuration of host machines. It does operations like allocating IP addresses, configuring VLANs for projects, implementing security groups and configuring networks for compute nodes.</para>
-    </section>
-    <section xml:id="Volume_Workers_nova-volume_-d1e250">
-		<title>Volume Workers (nova-volume) (to be changed to Cinder)</title>
-		<para>Volume workers are used for management of LVM-based instance volumes. Volume Workers perform volume related functions such as creation, deletion, attaching a volume to an instance, and detaching a volume from an instance. Volumes provide a way of providing persistent storage for the instances, as the root partition is non-persistent and any changes made to it are lost when an instance is terminated. When a volume is detached from an instance or when an instance, to which the volume is attached, is terminated, it retains the data that was stored on it. This data can be accessed by re-attaching the volume to the same instance or by attaching it to other instances.</para>
-		<para>Critical data in an instance must always be written to a volume, so that it can be accessed later. This typically applies to the storage needs of database servers etc.</para>
+		<para>Compute workers deal with instance management life cycle. They receive the requests for instance life cycle management via the Message Queue and carry out operations. There are several compute workers in a typical production cloud deployment. An instance is deployed on any of the available compute worker based on the scheduling algorithm used.</para>
     </section>
     <section xml:id="Scheduler_nova-scheduler_-d1e262">
         <title>Scheduler (nova-scheduler)</title>
         <para>The scheduler maps the nova-API calls to the appropriate OpenStack components. It runs as a daemon named nova-schedule and picks up a compute server from a pool of available resources depending on the scheduling algorithm in place. A scheduler can base its decisions on various factors such as load, memory, physical distance of the availability zone, CPU architecture, etc. The nova scheduler implements a pluggable architecture.</para>
-        <para>Currently the nova-scheduler implements a few basic scheduling algorithms:</para>
-    <itemizedlist>
-        <listitem><para>chance: In this method, a compute host is chosen randomly across availability zones.</para></listitem>
-        <listitem><para>availability zone: Similar to chance, but the compute host is chosen randomly from within a specified availability zone.</para></listitem>
-        <listitem><para>simple: In this method, hosts whose load is least are chosen to run the instance. The load information may be fetched from a load balancer.</para></listitem>
-    </itemizedlist>
+    </section>
 </section>
 </section>
-</section>
-
+<section xml:id="OpenStack_Networking_Service_Quantum_-d1e241">
+		<title>OpenStack Networking Service (Quantum)</title>
+		<para>Quantum is the component of OpenStack which takes care of everything related to networking. It is also referred as "Network as a service" component for overall project. It provides an API which helps in enabling modular, robust networking with help of OpenSource software like OpenvSwitch or vendor cetric plugins. It also takes care of advance networking capabilities which are essential for a IaaS infrastructure like firewall/IDS/Load Balancer via third party providers.
+</para>
+		<itemizedlist>
+		<para>The Components of Quantum</para>
+		<listitem><para>quantum-dhcp-agent</para></listitem>
+		<listitem><para>quantum-lbaas-agent</para></listitem>
+		<listitem><para>quantum-openvswitch-agent (While Using Open vSwitch Plugin)</para></listitem>
+		<listitem><para>quantum-server</para></listitem>
+		<listitem><para>quantum-l3-agent</para></listitem>
+		<listitem><para>quantum-metadata-agent</para></listitem>
+		<listitem><para>Virtual Switch (Open vSwitch)</para></listitem>	
+		</itemizedlist>    
+    </section>
 <section xml:id="OpenStack_Imaging_Service_Glance_-d1e329">
     <title>OpenStack Imaging Service (Glance)</title>
 	<para>OpenStack Imaging Service is a lookup and retrieval system for virtual machine images. It can be configured to use any one of the following storage backends:</para>
 	<itemizedlist>
 		<listitem><para>Local filesystem  (default)</para></listitem>
-		<listitem><para>OpenStack Object Store (Swift) to store images</para></listitem>
+		<listitem><para>OpenStack Object Store to store images</para></listitem>
 		<listitem><para>S3 storage directly</para></listitem>
 		<listitem><para>S3 storage with Object Store as the intermediate for S3 access.</para></listitem>
 		<listitem><para>HTTP (read-only)</para></listitem>
@@ -132,6 +129,17 @@
 		</itemizedlist>
     </section>
 </section>
+<section xml:id="Volume_Workers_Cinder_-d1e250">
+		<title>Volume Workers (Cinder)</title>
+		<para>Volume workers are used for management of LVM-based instance volumes. Volume Workers perform volume related functions such as creation, deletion, attaching a volume to an instance, and detaching a volume from an instance. Volumes provide a way of providing persistent storage for the instances, as the root partition is non-persistent and any changes made to it are lost when an instance is terminated. When a volume is detached from an instance or when an instance, to which the volume is attached, is terminated, it retains the data that was stored on it. This data can be accessed by re-attaching the volume to the same instance or by attaching it to other instances.</para>
+		<para>Critical data in an instance must always be written to a volume, so that it can be accessed later. This typically applies to the storage needs of database servers etc.</para>
+		<para>The Components of Cinder</para>
+		<itemizedlist>
+		<listitem><para>cinder-api</para></listitem>
+		<listitem><para>cinder-scheduler</para></listitem>
+		<listitem><para>cinder-volume</para></listitem>
+		</itemizedlist>
+    </section>
 
 <section xml:id="OpenStack_Storage_Infrastructure_Swift_-d1e271">
 		<title>OpenStack Storage Infrastructure (Swift)</title>
