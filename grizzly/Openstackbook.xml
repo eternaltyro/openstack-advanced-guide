@@ -5,7 +5,7 @@
   xmlns:svg="http://www.w3.org/2000/svg"
   xmlns:html="http://www.w3.org/1999/xhtml" version="5.0"
   xml:id="book_ygy_znp_2g">
-  <title>OpenStack Compute Starter Guide</title>
+  <title>OpenStack Grizzly Beginner's Guide</title>
   <info>
     <author>
       <personname>
@@ -17,20 +17,20 @@
       </affiliation>
     </author>
     <copyright>
-      <year>2012</year>
-      <holder>CSS Corp Private Limited
-        (http://www.csscorp.com/)</holder>
+      <year>2013</year>
+      <holder>Stackpros
+        (http://stackpros.com.com/)</holder>
     </copyright>
-    <releaseinfo>essex</releaseinfo>
+    <releaseinfo>grizzly</releaseinfo>
     <productname>OpenStack Compute</productname>
     <pubdate>2012-05-04</pubdate>
-    <legalnotice role="cc-by-nc-sa">
+    <legalnotice role="Apache2.0">
       <annotation>
         <remark>Rest of the licensing details are filled in by the template.</remark>
       </annotation>
     </legalnotice>
     <abstract>
-      <para>This is a tutorial style beginner's guide for OpenStack™ on Ubuntu 12.04, Precise Pangolin. The aim is to help the reader in setting up a minimal installation of OpenStack.</para>
+      <para>This is a tutorial style beginner's guide for OpenStack™ Grizzly on Ubuntu 12.04, Precise Pangolin. The aim is to help the reader in setting up a minimal installation of OpenStack.</para>
     </abstract>
   </info>
   <xi:include href="Introduction.xml"/>
