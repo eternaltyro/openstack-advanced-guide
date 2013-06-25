@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns:db="http://docbook.org/ns/docbook" xmlns="http://docbook.org/ns/docbook" xml:id="OpenStack_Commands-d1e2584" version="5.0" xml:base="Commands.xml">
+<title>OpenStack Commands</title>
+
+<section xml:id="Nova_Commands-d1e2589">
+<title>Nova Commands</title>
+<para>nova is the command line interface for OpenStack Compute API.</para>
+<programlisting>
+Usage: nova command [options] [args]
+
+Commands:
+    help                   Display help about this program or one of its subcommands.
+    actions                Retrieve server actions.
+    backup-schedule        Show or edit the backup schedule for a server.
+    backup-schedule-delete Delete the backup schedule for a server.
+    boot                   Boot a new server.
+    delete                 Immediately shut down and delete a server.
+    diagnostics            Retrieve server diagnostics.
+    flavor-list            Print a list of available 'flavors' (sizes of servers).
+    image-create           Create a new image by taking a snapshot of a running server.
+    image-delete           Delete an image.
+    image-list             Print a list of available images to boot from.
+    ip-share               Share an IP address from the given IP group onto a server.
+    ip-unshare             Stop sharing an given address with a server.
+    ipgroup-create         Create a new IP group.
+    ipgroup-delete         Delete an IP group.
+    ipgroup-list           Show IP groups.
+    ipgroup-show           Show details about a particular IP group.
+    list                   List active servers.
+    pause                  Pause a server.
+    reboot                 Reboot a server.
+    rebuild                Shutdown, re-image, and re-boot a server.
+    rename                 Rename a server.
+    rescue                 Rescue a server.
+    resize                 Resize a server.
+    resize-confirm         Confirm a previous resize.
+    resize-revert          Revert a previous resize (and return to the previous VM).
+    resume                 Resume a server.
+    root-password          Change the root password for a server.
+    show                   Show details about the given server.
+    suspend                Suspend a server.
+    unpause                Unpause a server.
+    unrescue               Unrescue a server.
+    zone                   Show or edit a child zone.
+    zone-add               Add a new child zone.
+    zone-delete            Delete a zone.
+    zone-info              Get this zones name and capabilities.
+    zone-list              List the children of a zone.
+</programlisting>
+</section>
+
+<section xml:id="Glance_Commands-d1e2672">
+<title>Glance Commands</title>
+<para>Glance is the command line interface for the OpenStack Imaging service.</para>
+<programlisting>
+Usage: glance command [options] [args]
+
+Commands:
+    help command    Output help for one of the commands below
+    add             Adds a new image to Glance
+    update          Updates an image's metadata in Glance
+    delete          Deletes an image from Glance
+    index           Return brief information about images in Glance
+    details         Return detailed information about images in
+                    Glance
+    show            Show detailed information about an image in
+                    Glance
+    clear           Removes all images and metadata from Glance
+
+Member Commands:
+    image-members    List members an image is shared with
+    member-images    List images shared with a member
+    member-add       Grants a member access to an image
+    member-delete    Revokes a member's access to an image
+    members-replace  Replaces all membership for an image
+</programlisting>
+</section>
+
+<section xml:id="Swift_Commands-d1e2713">
+<title>Swift Commands</title>
+<para>Swift is the command line interface for OpenStack Object Store service.</para>
+<programlisting>
+Usage: swift command [options] [args]
+
+Commands:
+    stat     Displays information for the account, container, or object depending
+             on the args given (if any).
+    list     Lists the containers for the account or the objects for a container.
+    upload   Uploads to the given container the files and directories specified by
+             the remaining args.
+    post     Updates meta information for the account, container, or object 
+             depending on the args given.
+    download Downloads everything in the account (with --all), or everything in
+             a container, or a list of objects depending on the args given.
+    delete   Deletes everything in the account (with --all), or everything in
+             a container, or a list of objects depending on the args given.
+</programlisting>
+</section>
+
+<section xml:id="Keystone_Commands-d1e2734">
+<title>Keystone Commands</title>
+<para>Keystone is the command line interface to the OpenStack Identity service.</para>
+<programlisting>
+Usage: keystone command [options] [args]
+
+Commands:
+    catalog                 List service catalog, possibly filtered by service.
+    ec2-credentials-create  Create EC2-compatibile credentials for user per tenant
+    ec2-credentials-delete  Delete EC2-compatibile credentials
+    ec2-credentials-get     Display EC2-compatibile credentials
+    ec2-credentials-list    List EC2-compatibile credentials for a user
+    endpoint-create         Create a new endpoint associated with a service
+    endpoint-delete         Delete a service endpoint
+    endpoint-get            Find endpoint filtered by a specific attribute or service type
+    endpoint-list           List configured service endpoints
+    role-create             Create new role
+    role-delete             Delete role
+    role-get                Display role details
+    role-list               List all roles, or only those granted to a user.
+    service-create          Add service to Service Catalog
+    service-delete          Delete service from Service Catalog
+    service-get             Display service from Service Catalog
+    service-list            List all services in Service Catalog
+    tenant-create           Create new tenant
+    tenant-delete           Delete tenant
+    tenant-get              Display tenant details
+    tenant-list             List all tenants
+    tenant-update           Update tenant name, description, enabled status
+    token-get               Display the current user token
+    user-create             Create new user
+    user-delete             Delete user
+    user-get                Display user details.
+    user-list               List users
+    user-password-update    Update user password
+    user-role-add           Add role to user
+    user-role-remove        Remove role from user
+    user-update             Update user's name, email, and enabled status
+    discover                Discover Keystone servers and show authentication protocols and
+    help                    Display help about this program or one of its subcommands.
+</programlisting>
+</section>
+
+</chapter>

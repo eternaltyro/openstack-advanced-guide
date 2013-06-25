@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?><chapter xmlns:db="http://docbook.org/ns/docbook" xmlns="http://docbook.org/ns/docbook" xml:id="Storage_Management-d1e1995" version="5.0" xml:base="Dashboard.xml">
+<title>OpenStack Dashboard (Horizon)</title>
+<para>Using the OpenStack Dashboard, one can manage various OpenStack services. It may be used to manage instances and images, create keypairs, attach volumes to instances, manipulate Swift containers etc. The OpenStack Dashboard is accessible via http://&lt;ip_address&gt;</para>
+
+<section xml:id="Login-d1e5000">
+<title>Login</title>
+<para>Login to the dashboard with username "admin" and password "admin".</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/login.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/login.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+
+<section xml:id="User_Overview-d1e5002">
+<title>User Overview</title>
+<para>After logging, depending on the access privileges, the user is allowed access to specific projects. The below is an overview page for a project belonging to the 'admin' user. One can view and download some basic usage metric reports here.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/overview.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/overview.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<section xml:id="Instances-d1e5003">
+<title>Instances</title>
+<para>The page lists currently running instances belonging to the user 'admin'. From this page, one can terminate, pause, reboot any running instances, connect to vnc console of the instance etc.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/instances.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/instances.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Services-d1e5004">
+<title>Services</title>
+<para>The list of services defiend can be viewed on this page.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/services.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/services.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Flavors-d1e5005">
+<title>Flavors</title>
+<para>This page lists the currently available flavors that can be used to launch an instance. One can also create custom flavors on this page.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/flavors.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/flavors.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Images-d1e5006">
+<title>Images</title>
+<para>This page lists the available images for the 'admin' user. One can also delete any images, if they are not required.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/images.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/images.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Projects-d1e5007">
+<title>Projects</title>
+<para>This page lists the available projects (tenants) that have been created. One can also create new projects, assign users to the projects etc.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/projects.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/projects.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Users-d1e5008">
+<title>Users</title>
+<para>This page lists the users that have been created. One can also create new users, disable/delete existing users.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/users.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/users.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Quotas-d1e5008">
+<title>Users</title>
+<para>This page lists the quota of resources allocated to  a user; number of CPUs, amount of RAM, diskspace, max. number of instances that can be raised etc.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/quotas.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/quotas.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+</section>
+
+<section xml:id="Project_Overview-d1e5009">
+<title>Project Overview</title>
+<para>This page shows an overview of the project 'admin'. One can view and download some basic usage metric reports here.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/overview2.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/overview2.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<section xml:id="Instances_Volumes-d1e5009">
+<title>Instances &amp; Volumes</title>
+<para>This page lists all the instances belonging to various users of the project, instance properties etc. It also list all the volumes that have been created and their status; whether available or attached to any running instances. One can also create new volumes and attach them to the instances on this page.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/instances_volumes.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/instances_volumes.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Instances_VNC-d1e5016">
+<title>Instances - VNC Console</title>
+<para>For a running instance, one can connect to the instance console via VNC.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/vnc1.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/vnc1.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/vnc2.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/vnc2.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Images_Snapshots-d1e5009">
+<title>Images &amp; Snapshots</title>
+<para>This page lists the custom images that have been uploaded. One can edit the image properties, delete and launch new instances of the images. This page also lists the snapshots taken from instances and volumes.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/images_snapshots.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/images_snapshots.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+<section xml:id="Access_Security-d1e5010">
+<title>Access &amp; Security</title>
+<para>On this page, one can allocate and release floating ip addresses, associate and dissociate them to instances. New security groups can be created and one can modify the rules belonging to each security group.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/access_security.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/access_security.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/edit_security_securitygp.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/edit_security_securitygp.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/create_keypair.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/create_keypair.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+</section>
+<section xml:id="Containers_Objects-d1e5011">
+<title>Containers &amp; Objects</title>
+<para>On this page, one can create/delete containers, lists objects, upload/download objects and delete objects.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/containers.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/containers.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+            <imagedata fileref="images/dashboard/objects.png"
+				format="PNG" scale="50"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/dashboard/objects.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+</section>
+</chapter>

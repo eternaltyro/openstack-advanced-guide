@@ -1,0 +1,39 @@
+/* 
+* Copyright [2013] [Kiran, Johnson, Atul, Suseendran, Yogesh]
+*
+*   Licensed under the Apache License, Version 2.0 (the "License");
+*   you may not use this file except in compliance with the License.
+*   You may obtain a copy of the License at
+*
+*       http://www.apache.org/licenses/LICENSE-2.0
+*
+*   Unless required by applicable law or agreed to in writing, software
+*   distributed under the License is distributed on an "AS IS" BASIS,
+*   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*   See the License for the specific language governing permissions and
+*   limitations under the License.
+*
+*/
+
+OpenStack Grizzly Beginner's Guide for Ubuntu 12.04, Precise Pangolin
+=============================================================
+
+This is a tutorial style Beginner's guide for OpenStack Grizzly on Ubuntu 12.04. 
+The aim is to help the reader in setting up a minimal installation of OpenStack.
+
+The beginner's guide has been written using DocBook 5.0
+
+Each chapter has a dedicated DocBook source file.
+
+Layout of the source:
+---------------------
+    openstackbook
+            |
+            |_ images - contains images used in this guide
+            |
+            |_ *.xml - DocBook source for the chapter
+            |
+            |_ README - this file
+
+
+Bug reports on GitHub.

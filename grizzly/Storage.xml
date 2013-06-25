@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns:db="http://docbook.org/ns/docbook" xmlns="http://docbook.org/ns/docbook" xml:id="Storage_Management-chapter" version="5.0" xml:base="Storage.xml">
+ <title>Storage Management</title>
+<section xml:id="Nova-volume-d1e2000">
+<title>Nova-volume</title>
+<para>Nova-volume provides persistent block storage compatible with Amazon's Elastic Block Store. The storage on the instances is non-persistent by nature and hence any data that are generated and stored on the file system on the first disk of the instance are lost when the instance is terminated. You will need to use persistent volumes provided by nova-volume if you want any data generated during the life of the instance to persist after the instance is terminated.</para>
+<para>Nova commands can be used to manage these volumes.</para>
+<para>Here are a few examples:</para>
+<section xml:id="Interacting_with_Storage_Controller-d1e2014">
+<title>Interacting with Storage Controller</title>
+<para>Make sure that you have sourced novarc before running any of the following commands. The following commands refer to a zone called 'nova', which we created in the chapter on "Installation and Configuration". The project is 'proj' as referred to in the other chapters.</para>
+<para>Create a 10 GB volume</para>
+<programlisting>nova volume-create --display_name myvolume 10</programlisting>
+<para>List the volumes</para>
+<programlisting>nova volume-list</programlisting>
+<para>You should see an output like this:</para>
+<programlisting>
++----+-----------+--------------+------+-------------+--------------------------------------+
+| ID |   Status  | Display Name | Size | Volume Type |             Attached to              |
++----+-----------+--------------+------+-------------+--------------------------------------+
+| 1  | in-use    | New Volume   | 20   | None        | 7db4cb64-7f8f-42e3-9f58-e59c9a31827d |
+| 4  | available | volume1      | 10   | None        |                                      |
+| 5  | available | myvolume     | 10   | None        |                                      |
+| 6  | available | myvolume1    | 10   | None        |                                      |
++----+-----------+--------------+------+-------------+--------------------------------------+
+</programlisting>
+<para>Attach a volume to a running instance</para>
+<programlisting>nova volume-attach 857d70e4-35d5-4bf6-97ed-bf4e9a4dcf5a &lt;volume-id&gt; /dev/vdb</programlisting>
+<para>A volume can only be attached to one instance at a time. When nova volume-list shows the status of a volume as 'available', it means it is not attached to any instance and ready to be used. If you run nova volume-list, you can see that the status changes from "available" to "in-use" if it is attached to an  instance successfully.</para>
+<para>When a volume is attached to an instance, it shows up as an additional disk on the instance. You can login to the instance and mount the disk, format it and use it.</para>
+<para>Detach a volume from an instance.</para>
+<programlisting>nova volume-detach 857d70e4-35d5-4bf6-97ed-bf4e9a4dcf5a &lt;volume-id&gt;</programlisting>
+<para>The data on the volume persists even after the volume is detached from an instance or after the instance is terminated. You can view the data after attaching the volume to another instance.</para>
+<para>Even though you have indicated /dev/vdb as the device on the instance, the actual device name created by the OS running inside the instance may differ. You can find the name of the device by looking at the device nodes in /dev or by watching the syslog when the volume is being attached.</para>
+</section>
+<section xml:id="Swift_storage_operations--d1e2125">
+<title>Swift</title>
+<para>Swift is a reliable, distributed, massively scalable blob storage service that can be used for storage and archival of objects. Swift provides a REST interface. You can use Swift commandline which is an interface for the OpenStack object store service.</para>
+<para>To get the information about swift account, container and objects.</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd stat
+Account: AUTH_43b42dae-dc0b-4a4b-ac55-97de614d6e6e
+Containers: 1
+Objects: 1
+Bytes: 1124
+Accept-Ranges: bytes
+X-Trans-Id: txb21186a9eef64ed295a1e95896a0fc72
+</programlisting>
+<para>To get information about a particular container (mycontainer):</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd stat mycontainer
+</programlisting>
+<para>To get information about an object (abc123.txt) within container (mycontainer):</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd stat mycontainer abc123.txt
+</programlisting>
+<para>To list available containers in account:</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd list
+</programlisting>
+<para>To list all containers whose names begin with 'my':</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd --prefix=my list
+</programlisting>
+<para>To list all objects within container 'mycontainer':</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd --prefix=my list mycontainer
+</programlisting>
+<para>To upload files 'abc.txt' and 'xyz.txt' to 'mycontainer':</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd upload mycontainer /path/abc.txt /path/xyz.txt
+</programlisting>
+<para>To download all the objects from all containers:</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd --all download
+</programlisting>
+<para>To download all objects from container 'mycontainer':</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd download mycontainer
+</programlisting>
+<para>To download 'abc.txt' and 'xyz.txt' from container 'mycontainer':</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd download mycontainer abc.txt xyz.txt
+</programlisting>
+<para>To delete all objects in all containers:</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd --all delete
+</programlisting>
+<para>To delete all objects in container 'mycontainer':</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd delete mycontainer
+</programlisting>
+<para>To delete files 'abc.txt' and 'xyz.txt' from container 'mycontainer':</para>
+<programlisting>
+$ swift -v -V 2.0 -A http://127.0.0.1:5000/v2.0/ -U service:swiftuser -K swiftpasswd delete mycontainer abc.txt xyz.txt
+</programlisting>
+</section>
+</section>
+</chapter>

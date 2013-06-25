@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chapter xmlns:db="http://docbook.org/ns/docbook" xmlns="http://docbook.org/ns/docbook" xml:id="Network_Management-d1e2079" version="5.0" xml:base="Network.xml">
+	<title>Network Management</title>
+	<section xml:id="Introduction-d1e2084">
+		<title>Introduction</title>
+		<para>In OpenStack, the networking is managed by a component called "nova-network". This interacts with nova-compute to ensure that the instances have the right kind of networking setup for them to communicate among themselves as well as with the outside world. OpenStack instances can have 2 types of IP addresses associated to it: Private IP address (fixed) and Public IP address (floating). Private IP addresses are typically used for communication between instances (internal) and public IP addresses are used for communication of instances with the outside world (external or Internet). The so-called public IP addresses need not necessarily be IP addresses route-able on the Internet ; they can even be addresses on a corporate LAN.</para>
+		<para>The network configurations inside the instances are done with private IP addresses in view. The association between the private IP and the public IP addresses and necessary routing are handled by nova-network and the instances need not be aware of them.</para>
+		<para>nova-network provides 3 different network management options. Currently you can only choose one of these 3 options for your network management.</para>
+		<itemizedlist>
+			<listitem><para>Flat Network</para></listitem>
+			<listitem><para>Flat DHCP Network</para></listitem>
+			<listitem><para>VLAN Network</para></listitem>
+		</itemizedlist>
+		<para>VLAN Network is the most feature rich and is the ideal choice for a production deployment, while the other modes can be used while getting familiar with OpenStack and when you do not have VLAN Enabled switches to connect different components of the OpenStack infrastructure.</para>
+		<para>The network type is chosen by using one of the following configuration options in nova.conf file. If no network manager is specified explicitly, the default network manager, VLANManager is used.</para>
+		<programlisting>
+			--network_manager = nova.network.manager.FlatManager
+			--network_manager = nova.network.manager.FlatDHCPManager
+			--network_manager = nova.network.manager.VlanManager
+		</programlisting>
+		<para>In each of these cases, run the following commands to set up private and public IP addresses for use by the instances:</para>
+		<programlisting>
+			sudo nova-manage network create private --fixed_range_v4=192.168.4.3/27 --num_networks=1 --bridge=br100 --bridge_interface=eth1 --network_size=32
+			sudo nova-manage floating create --ip_range=10.10.10.224/27
+		</programlisting>
+		<para>The public IP which you are going to associate with an instance needs to be allocated first by using the command:</para>
+		<programlisting>
+        nova floating-ip-create
+        +----------------+-------------+----------+------+
+        |       Ip       | Instance Id | Fixed Ip | Pool |
+        +----------------+-------------+----------+------+
+        | 10.10.10.225   | None        | None     | nova |
+        +----------------+-------------+----------+------+
+		</programlisting>
+		<para>You can then associate a public IP to a running instance by using the command:</para>
+		<programlisting>
+		nova add-floating-ip &lt;instance-name&gt; 10.10.2.225
+		</programlisting>
+	</section>
+</chapter>

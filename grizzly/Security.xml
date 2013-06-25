@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?><chapter xmlns:db="http://docbook.org/ns/docbook" xmlns="http://docbook.org/ns/docbook" xml:id="Security-d1e2500" version="5.0" xml:base="Security.xml">
+<title>Security</title>
+<section xml:id="Security_Overview-d1e2505">
+<title>Security Overview</title>
+<para>OpenStack provides ingress filtering for the instances based on the concept of security groups. OpenStack accomplishes ingress filtering by creating suitable iptables rules. A Security Group is a named set of rules that get applied to the incoming packets for the instances. You can specify a security group while launching an instance. Each security group can have multiple rules associated with it. Each rule specifies the source IP/network, protocol type, range of ports etc. Any packet matching these parameters specified in a rule is allowed in. Rest of the packets are blocked.</para>
+<para>A security group that does not have any rules associated with it causes blocking of all incoming traffic. The mechanism only provides ingress filtering and does not provide any egress filtering. As a result all outbound traffic is allowed. If you need to implement egress filtering, you will need to implement that inside the instance (during bundling process) using a firewall.</para>
+<para>The OpenStack Dashboard lets you manage security groups and also let you specify a security group while launching an instance. You can also use commands like 'nova secgroup-add-rule' etc. for this purpose.</para>
+<para>Here are a few nova commands to manage security groups.</para>
+
+<para>Create a security group named "myservers".</para>
+<programlisting> 
+nova secgroup-create &lt;name&gt; &lt;description&gt;
+nova secgroup-create myservers my-default-server-group
+</programlisting>
+
+<para>Add a rule to the security group "myservers" allowing icmp and ssh traffic from 192.168.1.1.</para>
+<programlisting>
+nova secgroup-add-rule myservers tcp 22 22 192.168.1.1/0
+nova secgroup-add-rule myservers icmp -1 -1 192.168.1.1/0
+</programlisting>
+
+<para>For a Windows instance, add a rule to accept incoming RDP connections</para>
+<programlisting>
+nova secgroup-add-rule myservers tcp 3389 3389 192.168.1.1/0
+</programlisting>
+
+<para>Rules can be viewed with the command.</para>
+<programlisting>
+$ nova secgroup-list-rules myservers
++-------------+-----------+---------+--------------+--------------+
+| IP Protocol | From Port | To Port |  IP Range    | Source Group |
++-------------+-----------+---------+--------------+--------------+
+|             |           |         |              |              | 
+| icmp        | -1        | -1      |192.168.1.1/0 |  myservers   |
+| tcp         | 22        | 22      |192.168.1.1/0 |  myservers   |
++-------------+-----------+---------+--------------+--------------+
+</programlisting>
+
+<para>Remove the rule for ssh traffic from the source ip 192.168.1.1 from the security group "myservers"</para>
+<programlisting>
+nova secgroup-delete-rule myservers ssh 22 22 192.168.1.1
+</programlisting>
+
+<para>Delete the security group "myservers"</para>
+<programlisting>
+nova secgroup-delete myservers
+</programlisting>
+
+<para>Launch an instance associated with the security group "myservers".</para>
+<programlisting>
+nova boot --flavor 1 --image 9bab7ce7-7523-4d37-831f-c18fbc5cb543 --key_name mykey myinstance --security_groups myservers
+</programlisting>
+
+<para>When you do not specify a security group, the instance gets associated with an inbuilt security group called "default". The rules for this security group can also be modified using nova secgroup-add-rule , nova secgroup-delete-rule commands.</para>
+</section>
+</chapter>

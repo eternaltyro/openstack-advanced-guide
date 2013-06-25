@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?><chapter xmlns:db="http://docbook.org/ns/docbook" xmlns="http://docbook.org/ns/docbook" xml:id="Introduction_to_OpenStack_and_its_components-d1e59" version="5.0" xml:base="Introduction.xml">
+	<title>Introduction to OpenStack and Its Components</title>
+	<section xml:id="Cloud_Computing-d1e64">
+		<title>Cloud Computing</title>
+		<para>Cloud computing is a computing model, where resources such as computing power, storage, network and software are abstracted and provided as services on the Internet on demand in a remotely accessible fashion. Billing models for these services are generally similar to the ones adopted for public utilities. On-demand availability, ease of provisioning, dynamic and virtually infinite scalability are some of the key attributes of cloud computing.</para>
+		<para>An infrastructure setup using the cloud computing model is generally referred to as the "cloud". The following are the broad categories of services available on the cloud:</para>
+		<itemizedlist>
+			<listitem><para>Infrastructure as a Service (IaaS)</para></listitem>
+			<listitem><para>Platform as a Service (PaaS)</para></listitem>
+			<listitem><para>Software as a Service (SaaS)</para></listitem>
+		</itemizedlist>
+	</section>
+	<section xml:id="OpenStack-d1e94">
+		<title>OpenStack</title>
+		<para>OpenStack is a collection of open source software projects that enterprises/service providers can use to setup and run their cloud compute and storage infrastructure. Rackspace and NASA are the key initial contributors to the stack. Rackspace contributed their "Cloud Files" platform (code) to power the Object Storage part of the OpenStack, while NASA contributed their "Nebula" platform (code) to power the Compute part.  OpenStack consortium has managed to have more than 150 members including Canonical, Dell, Citrix etc.</para>
+		<para>There are 5 main service families under OpenStack</para>
+		<itemizedlist>
+			<listitem><para>Nova - Compute Service</para></listitem>
+			<listitem><para>Swift - Storage Service</para></listitem>
+			<listitem><para>Glance - Imaging Service</para></listitem>
+			<listitem><para>Keystone - Identity Service</para></listitem>
+			<listitem><para>Horizon - UI Service</para></listitem>
+			<listitem><para>Quantum - Networking Service</para></listitem>
+			<listitem><para>Cinder - Block Storage Service</para></listitem>
+        </itemizedlist>
+<para>The diagram below shows a simple representation of interaction between keystone and dashboard with the remaining OpenStack components.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+			<imagedata fileref="images/keystone_dashboard.png"
+				format="PNG" scale="9"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/keystone_dashboardhtml.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+			<imagedata fileref="images/architecture.png"
+				format="PNG" scale="12"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/architecturehtml.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+
+<section xml:id="Open_Stack_Compute_Infrastructure_Nova_-d1e124">
+		<title>Open Stack Compute Infrastructure (Nova)</title>
+		<para>Nova is the Computing Fabric controller for the OpenStack Cloud. All activities needed to support the life cycle of instances within the OpenStack cloud are handled by Nova. This makes Nova a Management Platform that manages compute resources, networking, authorization, and scalability needs of the OpenStack cloud. But, Nova does not provide any virtualization capabilities by itself; instead, it uses libvirt API to interact with supported hypervisors. Nova exposes all its capabilities through a web services API that is compatible with the EC2 API of Amazon Web Services.</para>
+    <section xml:id="Functions_and_Features-d1e132">
+		<title>Functions and Features:</title>
+		<itemizedlist>
+			<listitem><para>Instance life cycle management</para></listitem>
+			<listitem><para>Management of compute resources</para></listitem>
+			<listitem><para>Networking and Authorization</para></listitem>
+			<listitem><para>REST-based API</para></listitem>
+			<listitem><para>Asynchronous eventually consistent communication</para></listitem>
+			<listitem><para>Hypervisor agnostic : support for Xen, XenServer/XCP, KVM, UML, VMware vSphere and Hyper-V</para></listitem>
+		</itemizedlist>
+    </section>
+<section xml:id="Components_of_OpenStack-Compute-d1e166">
+		<title>Components of OpenStack Compute</title>
+		<para>Nova Cloud Fabric is composed of the following major components:</para>
+		<itemizedlist>
+			<listitem><para>API Server (nova-api)</para></listitem>
+			<listitem><para>Message Queue (rabbit-mq server)</para></listitem>
+			<listitem><para>Compute Workers (nova-compute)</para></listitem>
+			<listitem><para>Network Controller (nova-network)</para></listitem>
+			<listitem><para>Volume Worker (nova-volume)</para></listitem>
+			<listitem><para>Scheduler (nova-scheduler)</para></listitem>
+		</itemizedlist>
+<section xml:id="API_Server_nova-api_-d1e213">
+		<title>API Server (nova-api)</title>
+		<para>The API Server provides an interface for the outside world to interact with the cloud infrastructure. API server is the only component that the outside world uses to manage the infrastructure. The management is done through web services calls using EC2 API. The API Server then, in turn, communicates with the relevant components of the cloud infrastructure through the Message Queue. As an alternative to EC2 API, OpenStack also provides a native API called "OpenStack API".</para>
+	</section>
+    <section xml:id="Message_Queue_Rabbit_MQ_Server_-d1e223">
+		<title>Message Queue (Rabbit MQ Server)</title>
+        <para>OpenStack components communicate among themselves using the message queue via AMQP(Advanced Message Queue Protocol). Nova uses asynchronous calls for request response, with a call-back that gets triggered once a response is received. Since asynchronous communication is used, none of the user actions get stuck for long in a waiting state. This is effective since many actions expected by the API calls such as launching an instance or uploading an image are time consuming.</para>
+    </section>
+    <section xml:id="Compute_Worker_nova-compute_-d1e232">
+		<title>Compute Worker (nova-compute)</title>
+		<para>Compute workers deal with instance management life cycle based on the scheduling algorithm used by nova-scheduler. They receive the requests for instance life cycle management via the Message Queue and carry out operations. There are several compute workers in a typical production cloud deployment. An instance is deployed on any of the available compute worker based on the scheduling algorithm used.</para>
+    </section>
+    <section xml:id="Network_Controller_nova-network_-d1e241">
+		<title>Network Controller (nova-network) (need to be changed to Quantum)</title>
+		<para>The Network Controller deals with the network configuration of host machines. It does operations like allocating IP addresses, configuring VLANs for projects, implementing security groups and configuring networks for compute nodes.</para>
+    </section>
+    <section xml:id="Volume_Workers_nova-volume_-d1e250">
+		<title>Volume Workers (nova-volume) (to be changed to Cinder)</title>
+		<para>Volume workers are used for management of LVM-based instance volumes. Volume Workers perform volume related functions such as creation, deletion, attaching a volume to an instance, and detaching a volume from an instance. Volumes provide a way of providing persistent storage for the instances, as the root partition is non-persistent and any changes made to it are lost when an instance is terminated. When a volume is detached from an instance or when an instance, to which the volume is attached, is terminated, it retains the data that was stored on it. This data can be accessed by re-attaching the volume to the same instance or by attaching it to other instances.</para>
+		<para>Critical data in an instance must always be written to a volume, so that it can be accessed later. This typically applies to the storage needs of database servers etc.</para>
+    </section>
+    <section xml:id="Scheduler_nova-scheduler_-d1e262">
+        <title>Scheduler (nova-scheduler)</title>
+        <para>The scheduler maps the nova-API calls to the appropriate OpenStack components. It runs as a daemon named nova-schedule and picks up a compute server from a pool of available resources depending on the scheduling algorithm in place. A scheduler can base its decisions on various factors such as load, memory, physical distance of the availability zone, CPU architecture, etc. The nova scheduler implements a pluggable architecture.</para>
+        <para>Currently the nova-scheduler implements a few basic scheduling algorithms:</para>
+    <itemizedlist>
+        <listitem><para>chance: In this method, a compute host is chosen randomly across availability zones.</para></listitem>
+        <listitem><para>availability zone: Similar to chance, but the compute host is chosen randomly from within a specified availability zone.</para></listitem>
+        <listitem><para>simple: In this method, hosts whose load is least are chosen to run the instance. The load information may be fetched from a load balancer.</para></listitem>
+    </itemizedlist>
+</section>
+</section>
+</section>
+
+<section xml:id="OpenStack_Imaging_Service_Glance_-d1e329">
+    <title>OpenStack Imaging Service (Glance)</title>
+	<para>OpenStack Imaging Service is a lookup and retrieval system for virtual machine images. It can be configured to use any one of the following storage backends:</para>
+	<itemizedlist>
+		<listitem><para>Local filesystem  (default)</para></listitem>
+		<listitem><para>OpenStack Object Store (Swift) to store images</para></listitem>
+		<listitem><para>S3 storage directly</para></listitem>
+		<listitem><para>S3 storage with Object Store as the intermediate for S3 access.</para></listitem>
+		<listitem><para>HTTP (read-only)</para></listitem>
+	</itemizedlist>
+    <section xml:id="Functions_and_Features_Glance_-d1e352">
+        <title>Functions and Features</title>
+    	<itemizedlist>
+    		<listitem><para>Provides imaging service</para></listitem>
+    	</itemizedlist>
+    </section>
+    <section xml:id="Components_of_OpenStack_Imaging_Service_Glance_-d1e365">
+		<title>Components of Glance</title>
+		<itemizedlist>
+			<listitem><para>Glance-control</para></listitem>
+			<listitem><para>Glance-registry</para></listitem>
+		</itemizedlist>
+    </section>
+</section>
+
+<section xml:id="OpenStack_Storage_Infrastructure_Swift_-d1e271">
+		<title>OpenStack Storage Infrastructure (Swift)</title>
+		<para>Swift provides a distributed, eventually consistent virtual object store for OpenStack. It is analogous to Amazon Web Services - Simple Storage Service (S3). Swift is capable of storing billions of objects distributed across nodes. Swift has built-in redundancy and failover management and is capable of archiving and media streaming. It is extremely scalable in terms of both size (several petabytes) and capacity (number of objects).</para>
+	<section xml:id="Functions_and_Features-d1e279">
+		<title>Functions and Features</title>
+		<itemizedlist>
+			<listitem><para>Storage of large number of objects</para></listitem>
+			<listitem><para>Storage of large sized objects</para></listitem>
+			<listitem><para>Data Redundancy</para></listitem>
+			<listitem><para>Archival capabilities - Work with large datasets</para></listitem>
+			<listitem><para>Data container for virtual machines and cloud apps</para></listitem>
+			<listitem><para>Media Streaming capabilities</para></listitem>
+			<listitem><para>Secure storage of objects</para></listitem>
+			<listitem><para>Backup and archival</para></listitem>
+			<listitem><para>Extreme scalability</para></listitem>
+		</itemizedlist>
+    </section>
+
+	<section xml:id="Components_of_Swift-d1e281">
+		<title>Components of Swift</title>
+		<itemizedlist>
+			<listitem><para>Swift Account</para></listitem>
+			<listitem><para>Swift Container</para></listitem>
+			<listitem><para>Swift Object</para></listitem>
+			<listitem><para>Swift Proxy</para></listitem>
+			<listitem><para>The RING</para></listitem>
+		</itemizedlist>
+	</section>
+	<section xml:id="Swift_Proxy_Server-d1e289">
+	<title>Swift Proxy Server</title>
+	<para>The consumers interact with the Swift setup through the proxy server using the Swift API. The proxy server acts as a gatekeeper and recieves requests from the world. It looks up the location of the appropriate entities and routes the requests to them. </para>
+	<para>The proxy server also handles failures of entities by rerouting requests to failover entities (handoff entities)</para>
+	</section>
+
+<section xml:id="Swift_Object_Server-d1e291">
+	<title>Swift Object Server</title>
+	<para>The Object server is a blob store. It's responsibility is to handle storage, retrieval and deletion of objects stored in the local storage. Objects are typically binary files stored in the filesystem with metadata contained as extended file attributes (xattr).</para>
+ 
+	<para>Note: xattr is supported in several filesystems such as ext3, ext4, XFS, Btrfs, JFS and ReiserFS in Linux. But it is known to work best under XFS, JFS, ReiserFS, Reiser4, and ZFS. XFS is considered to be the best option.</para>
+	</section>
+	<section xml:id="Swift_Swift_Server-d1e294">
+		<title>Swift Container server</title>
+		<para>The container server lists the objects in a container. The lists are stored as SQLite files. The container server also tracks the statistics like the number of objects contained and the storage size occupied by a container.</para>
+	</section>
+	<section xml:id="Swift_Account_Server-d1e296">
+	<title>Swift Account Server</title>
+	<para>The account server lists containers the same way a container server lists objects.</para>
+	</section>
+	<section xml:id="The_Ring-d1e299">
+	<title>The Ring</title>
+	<para>The ring contains information about the physical location of the objects stored inside Swift. It is a virtual representation of mapping of names of entities to their real physical location. It is analogous to an indexing service that various processes use to lookup and locate the real physical location of entities within the cluster. Entities like Accounts, Containers, Objects have their own seperate rings.</para>
+	</section>
+</section>
+
+<section xml:id="Openstack_Identity_server-d1e325">
+	<title>OpenStack Identity Service (Keystone)</title>
+    <para>Keystone provides identity and access policy services for all components in the OpenStack family. It implements it's own REST based API (Identity API). It provides authentication and authorization for all components of OpenStack including (but not limited to) Swift, Glance, Nova. Authentication verifies that a request actually comes from who it says it does. Authorization is verifying whether the authenticated user has access to the services he/she is requesting for.</para>
+<para>
+<mediaobject>
+		<imageobject role="fo">
+			<imagedata fileref="images/keystone.png"
+				format="PNG" scale="15"/>
+		</imageobject>
+		<imageobject role="html">
+			<imagedata fileref="images/keystonehtml.png"
+				format="PNG" />
+		</imageobject>
+</mediaobject>
+</para>
+    <para>Keystone provides two ways of authentication. One is username/password based and the other is token based. Apart from that, keystone provides the following services:</para>
+    <itemizedlist>
+        <listitem><para>Token Service (that carries authorization information about an authenticated user)</para></listitem>
+        <listitem><para>Catalog Service (that contains a list of available services at the users' disposal)</para></listitem>
+        <listitem><para>Policy Service (that let's keystone manage access to specific services by specific users or groups).</para></listitem>
+    </itemizedlist>
+	<section xml:id="OpenStack_Identity_server_components-d1e328">
+	<title>Components of Identity Service</title>
+	<itemizedlist>
+		<listitem><para>Endpoints - Every OpenStack service (Nova, Swift, Glance) runs on a dedicated port and on a dedicated URL(host), we call them endpoints.</para></listitem>
+		<listitem><para>Regions - A region defines a dedicated physical location inside a data centre. In a typical cloud setup, most if not all services are distributed across data centers/servers which are also called regions</para></listitem>
+		<listitem><para>User - A keystone authenticated user.</para></listitem>
+		<listitem><para>Services - Each component that is being connected to or being administered via keystone can be called a service. For example, we can call Glance a keystone service.</para></listitem>
+		<listitem><para>Role - In order to maintain restrictions as to what a particular user can do inside cloud infrastructure it is important to have a role associated.</para></listitem>
+		<listitem><para>Tenant - A tenant is a project with all the service endpoint and a role associated to user who is member of that particular tenant.</para></listitem>
+	</itemizedlist>
+	</section>	
+</section>
+
+<section xml:id="Openstack_Web_Interface-d1e340">
+	<title>Openstack Administrative Web-Interface (Horizon)</title>	
+    <para>Horizon the web based dashboard can be used to manage /administer OpenStack services. It can be used to manage instances and images, create keypairs, attach volumes to instances, manipulate Swift containers etc. Apart from this, dashboard even gives the user access to instance console and can connect to an instance through VNC. Overall, Horizon features the following:</para>
+    <itemizedlist>
+        <listitem><para>Instance Management - Create or terminate instance, view console logs and connect through VNC, Attaching volumes, etc.</para></listitem>
+        <listitem><para>Access and Security Management - Create security groups, manage keypairs, assign floating IPs, etc.</para></listitem>
+        <listitem><para>Flavor Management - Manage different flavors or instance virtual hardware templates.</para></listitem>
+        <listitem><para>Image Management - Edit or delete images.</para></listitem>
+        <listitem><para>View service catalog.</para></listitem>
+        <listitem><para>Manage users, quotas and usage for projects.</para></listitem>
+        <listitem><para>User Management - Create user, etc.</para></listitem>
+        <listitem><para>Volume Management - Creating Volumes and snapshots.</para></listitem>
+        <listitem><para>Object Store Manipulation - Create, delete containers and objects.</para></listitem>
+        <listitem><para>Downloading environment variables for a project.</para></listitem>
+    </itemizedlist>
+</section>
+
+</section>
+</chapter>
