@@ -360,4 +360,155 @@ Commands:
 </programlisting>
 </section>
 
+<section xml:id="Cinder_Commands-d1e2823">
+<title>Cinder Commands</title>
+<para>Command-line interface to the OpenStack Cinder API.
+</para>
+<programlisting>
+Usage: Cinder command [options] [args]
+
+
+    absolute-limits     Print a list of absolute limits for a user
+    create              Add a new volume.
+    credentials         Show user credentials returned from auth
+    delete              Remove a volume.
+    endpoints           Discover endpoints that get returned from the
+                        authenticate services
+    extra-specs-list    Print a list of current 'volume types and extra specs'
+                        (Admin Only).
+    force-delete        Attempt forced removal of a volume, regardless of it's
+                        state.
+    list                List all the volumes.
+    metadata            Set or Delete metadata on a volume.
+    quota-class-show    List the quotas for a quota class.
+    quota-class-update  Update the quotas for a quota class.
+    quota-defaults      List the default quotas for a tenant.
+    quota-show          List the quotas for a tenant.
+    quota-update        Update the quotas for a tenant.
+    rate-limits         Print a list of rate limits for a user
+    rename              Rename a volume.
+    show                Show details about a volume.
+    snapshot-create     Add a new snapshot.
+    snapshot-delete     Remove a snapshot.
+    snapshot-list       List all the snapshots.
+    snapshot-rename     Rename a snapshot.
+    snapshot-show       Show details about a snapshot.
+    type-create         Create a new volume type.
+    type-delete         Delete a specific volume type
+    type-key            Set or unset extra_spec for a volume type.
+    type-list           Print a list of available 'volume types'.
+    upload-to-image     Upload volume to image service as image.
+    bash-completion     Prints all of the commands and options to stdout so
+                        that the
+    help                Display help about this program or one of its
+                        subcommands.
+    list-extensions     List all the os-api extensions that are available.
+
+</programlisting>
+</section>
+
+<section xml:id="Quantum_Commands-d1e2921">
+<title>Quantum Commands</title>
+<para>Quantum the networking component </para>
+<programlisting>
+Usage: Quantum command [options] [args]
+
+Commands for API v2.0:
+  agent-delete                   Delete a given agent.
+  agent-list                     List agents.
+  agent-show                     Show information of a given agent.
+  agent-update                   Update a given agent.
+  dhcp-agent-list-hosting-net    List DHCP agents hosting a network.
+  dhcp-agent-network-add         Add a network to a DHCP agent.
+  dhcp-agent-network-remove      Remove a network from a DHCP agent.
+  ext-list                       List all exts.
+  ext-show                       Show information of a given resource
+  floatingip-associate           Create a mapping between a floating ip and a fixed ip.
+  floatingip-create              Create a floating ip for a given tenant.
+  floatingip-delete              Delete a given floating ip.
+  floatingip-disassociate        Remove a mapping from a floating ip to a fixed ip.
+  floatingip-list                List floating ips that belong to a given tenant.
+  floatingip-show                Show information of a given floating ip.
+  help                           print detailed help for another command
+  l3-agent-list-hosting-router   List L3 agents hosting a router.
+  l3-agent-router-add            Add a router to a L3 agent.
+  l3-agent-router-remove         Remove a router from a L3 agent.
+  lb-healthmonitor-associate     Create a mapping between a health monitor and a pool.
+  lb-healthmonitor-create        Create a healthmonitor
+  lb-healthmonitor-delete        Delete a given healthmonitor.
+  lb-healthmonitor-disassociate  Remove a mapping from a health monitor to a pool.
+  lb-healthmonitor-list          List healthmonitors that belong to a given tenant.
+  lb-healthmonitor-show          Show information of a given healthmonitor.
+  lb-healthmonitor-update        Update a given healthmonitor.
+  lb-member-create               Create a member
+  lb-member-delete               Delete a given member.
+  lb-member-list                 List members that belong to a given tenant.
+  lb-member-show                 Show information of a given member.
+  lb-member-update               Update a given member.
+  lb-pool-create                 Create a pool
+  lb-pool-delete                 Delete a given pool.
+  lb-pool-list                   List pools that belong to a given tenant.
+   lb-pool-show                   Show information of a given pool.
+  lb-pool-stats                  Retrieve stats for a given pool.
+  lb-pool-update                 Update a given pool.
+  lb-vip-create                  Create a vip
+  lb-vip-delete                  Delete a given vip.
+  lb-vip-list                    List vips that belong to a given tenant.
+  lb-vip-show                    Show information of a given vip.
+  lb-vip-update                  Update a given vip.
+  net-create                     Create a network for a given tenant.
+  net-delete                     Delete a given network.
+  net-external-list              List external networks that belong to a given tenant
+  net-gateway-connect            Add an internal network interface to a router.
+  net-gateway-create             Create a network gateway.
+  net-gateway-delete             Delete a given network gateway.
+  net-gateway-disconnect         Remove a network from a network gateway.
+  net-gateway-list               List network gateways for a given tenant.
+  net-gateway-show               Show information of a given network gateway.
+  net-gateway-update             Update the name for a network gateway.
+  net-list                       List networks that belong to a given tenant.
+  net-list-on-dhcp-agent         List the networks on a DHCP agent.
+  net-show                       Show information of a given network.
+  net-update                     Update network's information.
+  port-create                    Create a port for a given tenant.
+  port-delete                    Delete a given port.
+  port-list                      List ports that belong to a given tenant.
+  port-show                      Show information of a given port.
+  port-update                    Update port's information.
+  queue-create                   Create a queue.
+  queue-delete                   Delete a given queue.
+  queue-list                     List queues that belong to a given tenant.
+  queue-show                     Show information of a given queue.
+  quota-delete                   Delete defined quotas of a given tenant.
+  quota-list                     List defined quotas of all tenants.
+  quota-show                     Show quotas of a given tenant
+  quota-update                   Define tenant's quotas not to use defaults.
+  router-create                  Create a router for a given tenant.
+  router-delete                  Delete a given router.
+  router-gateway-clear           Remove an external network gateway from a router.
+  router-gateway-set             Set the external network gateway for a router.
+  router-interface-add           Add an internal network interface to a router.
+  router-interface-delete        Remove an internal network interface from a router.
+  router-list                    List routers that belong to a given tenant.
+  router-list-on-l3-agent        List the routers on a L3 agent.
+  router-port-list               List ports that belong to a given tenant, with specified router
+  router-show                    Show information of a given router.
+  router-update                  Update router's information.
+  security-group-create          Create a security group.
+  security-group-delete          Delete a given security group.
+  security-group-list            List security groups that belong to a given tenant.
+  security-group-rule-create     Create a security group rule.
+  security-group-rule-delete     Delete a given security group rule.
+  security-group-rule-list       List security group rules that belong to a given tenant.
+  security-group-rule-show       Show information of a given security group rule.
+  security-group-show            Show information of a given security group.
+  subnet-create                  Create a subnet for a given tenant.
+  subnet-delete                  Delete a given subnet.
+  subnet-list                    List networks that belong to a given tenant.
+  subnet-show                    Show information of a given subnet.
+  subnet-update                  Update subnet's information.
+
+</programlisting>
+</section>
+
 </chapter>
