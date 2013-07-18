@@ -1196,5 +1196,5 @@ aa362fd9-7c28-480b-845c-85a5c38ccd86 centoscli     qcow2    ovf       1611530240
 <title>OpenStack Dashboard</title>
 <para>Start a browser and type the ip address of Server1 i.e, http://10.10.10.2. You should see the dashboard login screen. Login with the credentials username - admin and password - admin to manage the OpenStack setup.</para>
 </section>
-
+</section>
 </chapter>
