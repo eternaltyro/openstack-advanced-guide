@@ -2,7 +2,7 @@
  <title>Installation and Configuration</title>
 <section xml:id="Introduction-d1e390">
 <title>Introduction</title>
-<para>The following section describes how to set up a minimal cloud infrastructure based on OpenStack using 3 machines. These machines are referred to in this and subsequent chapters as Server1, Server2 and Client1. Server1 runs all the components of Nova, Glance, Swift, Keystone and Horizon (OpenStack Dashboard). Server2 runs only nova-compute. Since OpenStack components follow a shared-nothing policy, each component or any group of components can be installed on any server.</para>
+<para>The following section describes how to set up a minimal cloud infrastructure based on OpenStack using 3 machines. These machines are referred to in this and subsequent chapters as Server1, Server2 and Client1. Server1 runs all the components of Nova, Glance, Quantum, Cinder, Swift, Keystone and Horizon (OpenStack Dashboard). Server2 runs only nova-compute. Since OpenStack components follow a shared-nothing policy, each component or any group of components can be installed on any server.</para>
 <para>Client1 is not a required component. In our sample setup, it is used for bundling images, as a client to the web interface and to run OpenStack commands to manage the infrastructure. Having this client ensures that you do not need to meddle with the servers for tasks such as bundling. Also, bundling of desktop Systems including Windows will require a GUI and it is better to have a dedicated machine for this purpose. We would recommend this machine to be VT-Enabled so that KVM can be run which allows launching of VMs during image creation for bundling.</para>
 <para>
 <mediaobject>
@@ -38,8 +38,8 @@
 </row>
 <row>
 <entry>Network Interfaces</entry>
-<entry>eth0 - Public N/W, eth1 - Private N/W</entry>
-<entry>eth0 - Public N/W, eth1 - Private N/W</entry>
+<entry>eth0 - Public N/W, eth1 - Management N/W</entry>
+<entry>eth0 - Public N/W, eth1 - Management N/W</entry>
 <entry>eth0 - Public N/W</entry>
 </row>
 <row>
@@ -72,7 +72,7 @@
 </section>
 <section xml:id="Server1-d1e537">
 <title>Server1</title>
- <para>As shown in the figure above, Server1 contains all nova- services including nova-compute, nova-api, nova-volume, nova-network, Glance, Swift, Keystone and Horizon. It contains two network interface cards (NICs).</para>
+ <para>As shown in the figure above, Server1 contains all nova- services including nova-compute, nova-api, nova-scheduler and other services including Quantum, Cinder, Glance, Swift, Keystone and Horizon. It contains two network interface cards (NICs).</para>
 <section xml:id="Base_OS-d1e542">
 <title>Base OS</title>
 <para>Install 64 bit version of Ubuntu server 12.04 keeping the following configurations in mind.</para>
@@ -81,13 +81,18 @@
 <listitem><para>Installation lets you setup the IP address for the first interface i.e. eth0. Set the IP address details.</para></listitem>
 <listitem><para>During installation select only Openssh-server in the packages menu.</para></listitem>
 </itemizedlist>
-<para>We will also be running nova-volume on this server and it is ideal to have a dedicated partition for the use of nova-volume. So, ensure that you choose manual partitioning scheme while installing Ubuntu Server and create a dedicated partition with adequate amount of space for this purpose. We have referred to this partition in the rest of the chapter as /dev/sda6. You can substitute the correct device name of this dedicated partition based on your local setup while following the instructions. Also ensure that the partition type is set as Linux LVM (8e) using fdisk either during install or immediately after installation is over. If you also plan to use a dedicated partition as Swift backend, create another partition for this purpose and follow the instructions in "Swift Installation" section below.</para>
+<para>We will also be running Cinder on this server and it is ideal to have a dedicated partition for the use of Cinder. So, ensure that you choose manual partitioning scheme while installing Ubuntu Server and create a dedicated partition with adequate amount of space for this purpose. We have referred to this partition in the rest of the chapter as /dev/sda6. You can substitute the correct device name of this dedicated partition based on your local setup while following the instructions. Also ensure that the partition type is set as Linux LVM (8e) using fdisk either during install or immediately after installation is over. If you also plan to use a dedicated partition as Swift backend, create another partition for this purpose and follow the instructions in "Swift Installation" section below.</para>
+<para>Install Ubuntu Key-ring Package</para>
+<programlisting>apt-get install ubuntu-cloud-keyring python-software-properties software-properties-common python-keyring</programlisting>
+<para>Add OpenStack grizzly repository</para>
+<programlisting>echo deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main >> /etc/apt/sources.list.d/grizzly.list</programlisting>
 <para>Update the machine using the following commands.</para>
-<programlisting>sudo apt-get update
-sudo apt-get upgrade
+<programlisting>
+apt-get update
+apt-get upgrade
 </programlisting>
-<para>Install bridge-utils:</para>
-<programlisting>sudo apt-get install bridge-utils</programlisting>
+<para>Install vlan and bridge-utils:</para>
+<programlisting>apt-get install vlan bridge-utils</programlisting>
 </section>
 <section xml:id="Network_Configuration-d1e591">
 <title>Network Configuration</title>
@@ -111,13 +116,13 @@ iface eth1 inet static
 		network 192.168.3.0
 		broadcast 192.168.3.255
 </programlisting>
-<para>Restart the network now</para>
-<programlisting>sudo /etc/init.d/networking restart</programlisting>
+<para>Restart the network</para>
+<programlisting>/etc/init.d/networking restart</programlisting>
 </section>
 <section xml:id="NTP_Server-d1e609">
 <title>NTP Server</title>
 <para>Install NTP package. This server shall act as the NTP server for the nodes. The time on all components of OpenStack will have to be in sync. We can run NTP server on server1 and have other servers/nodes sync to it.</para>
-<programlisting>sudo apt-get install ntp</programlisting>
+<programlisting>apt-get install ntp</programlisting>
 <para>Open the file /etc/ntp.conf and add the following lines to make sure that the time on the server stays in sync with an external server. If the Internet connectivity is down, the NTP server uses its own hardware clock as the fallback.</para>
 <programlisting>
 server ntp.ubuntu.com
@@ -125,23 +130,22 @@ server 127.127.1.0
 fudge 127.127.1.0 stratum 10
 </programlisting>
 <para>Restart the NTP server</para>
-<programlisting>sudo service ntp restart</programlisting>
+<programlisting>service ntp restart</programlisting>
 <para>Ensure that, IP addresses of the servers are resolvable by the DNS. If not, include the hostnames in /etc/hosts file.</para>
 </section>
-
 <section xml:id="Database_Server-d1e657"><title>Databases</title>
 <para>You can use MySQL, PostgreSQL or SQLite for Nova and Glance. Depending upon your choice of database, you will need to install the necessary packages and configure the database server.</para>
 <section xml:id="MySQL-d1e856">
 <title>MySQL</title>
 <para>Install mysql-server and python-mysqldb package</para>
-<programlisting>sudo apt-get install mysql-server python-mysqldb
+<programlisting>apt-get install mysql-server python-mysqldb
 </programlisting>
 <para>Create the root password for mysql. The password used in this guide is "mygreatsecret"</para> 
 <para>Change the bind address from 127.0.0.1 to 0.0.0.0 in /etc/mysql/my.cnf. It should be identical to this:</para>
 <programlisting>bind-address = 0.0.0.0
 </programlisting>
 <para>Restart MySQL server to ensure that it starts listening on all interfaces.</para>
-<programlisting>sudo restart mysql
+<programlisting>restart mysql
 </programlisting>
 </section>
 <section xml:id="Creating_Databases-d1e921">
@@ -176,13 +180,31 @@ TO 'keystonedbadmin'@'%';"</programlisting>
 <para>Create a password for the user "keystonedbadmin".</para>
 <programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'keystonedbadmin'@'%' = \
 PASSWORD('keystonesecret');"</programlisting>
+<para>Create a database named cinder.</para>
+<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE DATABASE cinder';</programlisting>
+<para>Create a user named cinderdbadmin.</para>
+<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE USER cinderdbadmin;'</programlisting>
+<para>Grant all privileges for cinderdbadmin on the database "cinder".</para>
+<programlisting>mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON cinder.* TO 'cinderdbadmin'@'%';"</programlisting>
+<para>Create a password for the user "cinderdbadmin".</para>
+<programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'cinderdbadmin'@'%' \
+= PASSWORD('cindersecret');"</programlisting>
+<para>Create a database named quantum.</para>
+<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE DATABASE quantum';</programlisting>
+<para>Create a user named quantumdbadmin.</para>
+<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE USER quantumdbadmin;'</programlisting>
+<para>Grant all privileges for quantumdbadmin on the database "quantum".</para>
+<programlisting>mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON quantum.* TO 'quantumdbadmin'@'%';"</programlisting>
+<para>Create a password for the user "quantumdbadmin".</para>
+<programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'quantumdbadmin'@'%' \
+= PASSWORD('quantumsecret');"</programlisting>
 </section>
 </section>
 
 <section xml:id="Keystone-d1e456">
 <title>Keystone</title>
 <para>Keystone is the identity service used by OpenStack. Install Keystone using the following command.</para>
-<programlisting>sudo apt-get install -y keystone python-keystone python-keystoneclient
+<programlisting>apt-get install -y keystone python-keystone python-keystoneclient
 </programlisting>
 <para>Open /etc/keystone/keystone.conf and change the line</para>
 <programlisting>admin_token = ADMIN</programlisting>
@@ -194,9 +216,9 @@ PASSWORD('keystonesecret');"</programlisting>
 <para>with</para>
 <programlisting>connection = mysql://keystonedbadmin:keystonesecret@10.10.10.2/keystone</programlisting>
 <para>Restart Keystone:</para>
-<programlisting>sudo service keystone restart</programlisting>
+<programlisting>service keystone restart</programlisting>
 <para>Run the following command to synchronise the database:</para>
-<programlisting>sudo keystone-manage db_sync</programlisting>
+<programlisting>keystone-manage db_sync</programlisting>
 <para>Export environment variables which are required while working with OpenStack.</para>
 <programlisting>
 export SERVICE_ENDPOINT="http://localhost:35357/v2.0"
@@ -225,22 +247,25 @@ keystone tenant-list
 <title>Creating Users</title>
 <para>Create the users by executing the following commands. In this case, we are creating four users - admin, nova, glance and swift</para>
 <programlisting>
-keystone user-create --name admin --pass admin --email admin@foobar.com --tenant_id 7f95ae9617cd496888bc412efdceabfd
-keystone user-create --name nova --pass nova --email nova@foobar.com --tenant_id c7970080576646c6959ee35970cf3199
-keystone user-create --name glance --pass glance --email glance@foobar.com --tenant_id c7970080576646c6959ee35970cf3199
-keystone user-create --name swift --pass swift --email swift@foobar.com --tenant_id c7970080576646c6959ee35970cf3199
+keystone user-create --name admin --pass ALPHABRAVO123 --email admin@foobar.com --tenant_id $admin-tenant-id
+keystone user-create --name nova --pass nova --email nova@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name glance --pass glance --email glance@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name swift --pass swift --email swift@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name cinder --pass cinder --email swift@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name quantum --pass quantum --email swift@foobar.com --tenant_id $service-tenant-id
 </programlisting>
 <para>It is important to provide the tenant id the particular user belongs to. </para>
 <programlisting>
 keystone user-list
-+----------------------------------+---------+-------------------+--------+
-|                id                | enabled |       email       |  name  |
-+----------------------------------+---------+-------------------+--------+
-| 1b986cca67e242f38cd6aa4bdec587ca | True    | swift@foobar.com  | swift  |
-| 518b51ea133c4facadae42c328d6b77b | True    | glance@foobar.com | glance |
-| b3de3aeec2544f0f90b9cbfe8b8b7acd | True    | admin@foobar.com  | admin  |
-| ce8cd56ca8824f5d845ba6ed015e9494 | True    | nova@foobar.com   | nova   |
-+----------------------------------+---------+-------------------+--------+
++----------------------------------+----------+---------+-------------------+
+|                id                |   name   | enabled |        email      |
++----------------------------------+----------+---------+-------------------+
+| 3581053c8d014499af8258e3e96699b0 |  admin   |   True  |  admin@foobar.com |
+| ed0e9ca1f5cb4730aaaf7b5b7f25324b |  cinder  |   True  | cinder@foobar.com |
+| a13fdbcdac6e4f9f99d7378a88ab1679 |  glance  |   True  | glance@foobar.com |
+| 436d7572452c4d2bbeab7b882ef90c26 |   nova   |   True  |  nova@foobar.com  |
+| 2351e9076ce44a6a8edaaff18594d45d | quantum  |   True  | quantum@foobar.com|
++----------------------------------+----------+---------+-------------------+
 </programlisting>
 </section>
 <section xml:id="Creating_Keystone_Roles-d1e460">
@@ -260,6 +285,7 @@ keystone role-list
 | d983800dd6d54ee3a1b1eb9f2ae3291f | Member               |
 +----------------------------------+----------------------+
 </programlisting>
+</section>
 <section xml:id="Adding_Roles_to_Users-d1e465">
 <title>Adding Roles to Users in Tenants</title>
 <para>Now we add roles to the users that have been created. A role to a specific user in a specific tenant can be assigned with the following command:</para>
@@ -268,34 +294,38 @@ keystone role-list
 <para>The required 'id' can be obtained from the commands - keystone user-list, keystone tenant-list, keystone role-list.</para>
 <para>To add a role of 'admin' to the user 'admin' of the tenant 'admin'.</para>
 <programlisting>
-keystone user-role-add --user b3de3aeec2544f0f90b9cbfe8b8b7acd \
---role 2bbe305ad531434991d4281aaaebb700 --tenant_id 7f95ae9617cd496888bc412efdceabfd
+keystone user-role-add --user $admin-user-id \
+--role $admin-role-id --tenant_id $admin-tenant-id
 </programlisting>
-<para>The following commands will add a role of 'admin' to the users 'nova', 'glance' and 'swift' of the tenant 'service'.</para>
+<para>The following commands will add a role of 'admin' to the users 'nova', 'glance','quantum','cinder' and 'swift' of the tenant 'service'.</para>
 <programlisting>
-keystone user-role-add --user ce8cd56ca8824f5d845ba6ed015e9494 \
---role 2bbe305ad531434991d4281aaaebb700 --tenant_id c7970080576646c6959ee35970cf3199
-keystone user-role-add --user 518b51ea133c4facadae42c328d6b77b \
---role 2bbe305ad531434991d4281aaaebb700 --tenant_id c7970080576646c6959ee35970cf3199
-keystone user-role-add --user 1b986cca67e242f38cd6aa4bdec587ca \
---role 2bbe305ad531434991d4281aaaebb700 --tenant_id c7970080576646c6959ee35970cf3199
+keystone user-role-add --user $nova-user-id \
+--role $admin-role-id --tenant_id $service-tenant-id
+keystone user-role-add --user $glance-user-id \
+--role $admin-role-id --tenant_id $service-tenant-id
+keystone user-role-add --user $quantum-user-id \
+--role $admin-role-id --tenant_id $service-tenant-id
+keystone user-role-add --user $cinder-user-id \
+--role $admin-role-id --tenant_id $service-tenant-id
+keystone user-role-add --user $swift-user-id \
+--role $admin-role-id --tenant_id $service-tenant-id
 </programlisting>
 <para>The 'Member' role is used by Horizon(In our case "admin" user) and Swift. So add the 'Member' role accordingly.</para>
 <programlisting>
-keystone user-role-add --user b3de3aeec2544f0f90b9cbfe8b8b7acd \
---role d983800dd6d54ee3a1b1eb9f2ae3291f --tenant_id 7f95ae9617cd496888bc412efdceabfd
+keystone user-role-add --user $admin-user-id \
+--role $member-role-id --tenant_id $admin-tenant-id
 </programlisting>
-<para>Replace the id appropriately as listed by keystone user-list, keystone role-list, keystone tenant-list.</para>
+<para>Replace the ids from the command ouput from keystone user-list, keystone role-list, keystone tenant-list.</para>
 </section>
 <section xml:id="Creating_Services-d1e467">
 <title>Creating Services</title>
-<para>Now we need to create the required services which the users can authenticate with. nova-compute, nova-volume, glance, swift, keystone and ec2 are the services that we create.</para>
+<para>Now we need to create the required services which the users can authenticate with. nova-compute, cinder, glance, swift, keystone, quantum and ec2 are the services that we create.</para>
 <programlisting>keystone service-create --name service_name --type service_type --description \
 'Description of the service'</programlisting>
 <programlisting>
 keystone service-create --name nova --type compute --description \
 'OpenStack Compute Service'
-keystone service-create --name volume --type volume --description \
+keystone service-create --name cinder --type volume --description \
 'OpenStack Volume Service'
 keystone service-create --name glance --type image --description \
 'OpenStack Image Service'
@@ -303,21 +333,23 @@ keystone service-create --name swift --type object-store --description \
 'OpenStack Storage Service'
 keystone service-create --name keystone --type identity --description \
 'OpenStack Identity Service'
+keystone service-create --name quantum --type network --description \
+'OpenStack Networking service'
 keystone service-create --name ec2 --type ec2 --description 'EC2 Service'
 </programlisting>
 <para>Each of the services that have been created above will be identified with a unique id which can be obtained from the following command:</para>
 <programlisting>
 keystone service-list
-+----------------------------------+----------+--------------+----------------------------+
-|                id                |   name   |     type     |        description         |
-+----------------------------------+----------+--------------+----------------------------+
-| 1e93ee6c70f8468c88a5cb1b106753f3 | nova     | compute      | OpenStack Compute Service  |
-| 28fd92ffe3824004996a3e04e059d875 | ec2      | ec2          | EC2 Service                |
-| 7d4ec192dfa1456996f0f4c47415c7a7 | keystone | identity     | OpenStack Identity Service |
-| 96f35e1112b143e59d5cd5d0e6a8b22d | swift    | object-store | OpenStack Storage Service  |
-| f38f4564ff7b4e43a52b2f5c1b75e5fa | volume   | volume       | OpenStack Volume Service   |
-| fbafab6edcab467bb734380ce6be3561 | glance   | image        | OpenStack Image Service    |
-+----------------------------------+----------+--------------+----------------------------+
++----------------------------------+----------+----------+------------------------------+
+|                id                |   name   |   type   |         description          |
++----------------------------------+----------+----------+------------------------------+
+| 21566ed965d143a28fd71e47d7bba45d |  cinder  |  volume  |   OpenStack Volume Service   |
+| f1a5cb20d0934daeab0ac4c360f6837e |   ec2    |   ec2    |    OpenStack EC2 service     |
+| 16d936d935b547f9a974d7a24b73980a |  glance  |  image   |   OpenStack Image Service    |
+| 473976c9dd004302acd2502b09d9be44 | keystone | identity |      OpenStack Identity      |
+| 8dbf87dfcb324895955b905bebf9529e |   nova   | compute  |  OpenStack Compute Service   |
+| 90d8eb24b33c4ecc925d1fc4b9d61cf6 | quantum  | network  | OpenStack Networking service |
++----------------------------------+----------+----------+------------------------------+
 </programlisting>
 <para>The 'id' will be used in defining the endpoint for that service.</para>
 </section>
@@ -329,36 +361,113 @@ keystone endpoint-create --region region_name --service_id service_id --publicur
 </programlisting>
 <para>We create an endpoint for the nova compute service.</para>
 <programlisting>
-keystone endpoint-create --region myregion --service_id 1e93ee6c70f8468c88a5cb1b106753f3 --publicurl 'http://10.10.10.2:8774/v2/%(tenant_id)s' --adminurl 'http://10.10.10.2:8774/v2/%(tenant_id)s' --internalurl 'http://10.10.10.2:8774/v2/%(tenant_id)s'
+keystone endpoint-create --region myregion --service_id $nova-service-id --publicurl 'http://10.10.10.2:8774/v2/%(tenant_id)s' --adminurl 'http://10.10.10.2:8774/v2/%(tenant_id)s' --internalurl 'http://10.10.10.2:8774/v2/%(tenant_id)s'
 </programlisting>
-<para>For creating an endpoint for nova-volume, execute the following command:</para>
+<para>For creating an endpoint for Cinder, execute the following command:</para>
 <programlisting>
-keystone endpoint-create --region myregion --service_id f38f4564ff7b4e43a52b2f5c1b75e5fa --publicurl 'http://10.10.10.2:8776/v1/%(tenant_id)s' --adminurl 'http://10.10.10.2:8776/v1/%(tenant_id)s' --internalurl 'http://10.10.10.2:8776/v1/%(tenant_id)s'
+keystone endpoint-create --region myregion --service_id $cinder-service-id --publicurl 'http://10.10.10.2:8776/v1/%(tenant_id)s' --adminurl 'http://10.10.10.2:8776/v1/%(tenant_id)s' --internalurl 'http://10.10.10.2:8776/v1/%(tenant_id)s'
 </programlisting>
 <para>For creating an endpoint for glance, execute the following command:</para>
 <programlisting>
-keystone endpoint-create --region myregion --service_id fbafab6edcab467bb734380ce6be3561 --publicurl 'http://10.10.10.2:9292/v1' --adminurl 'http://10.10.10.2:9292/v1' --internalurl 'http://10.10.10.2:9292/v1'
+keystone endpoint-create --region myregion --service_id $glance-service-id --publicurl 'http://10.10.10.2:9292/v1' --adminurl 'http://10.10.10.2:9292/v1' --internalurl 'http://10.10.10.2:9292/v1'
 </programlisting>
 <para>We now create an endpoint for the swift object storage service. Note that the port used in the endpoints has to be consistent with that used in the swift proxy server configuration.</para>
 <programlisting>
-keystone endpoint-create --region myregion --service_id 96f35e1112b143e59d5cd5d0e6a8b22d --publicurl 'http://10.10.10.2:8080/v1/AUTH_%(tenant_id)s' --adminurl 'http://10.10.10.2:8080/v1' --internalurl 'http://10.10.10.2:8080/v1/AUTH_%(tenant_id)s'
+keystone endpoint-create --region myregion --service_id $swift-service-id --publicurl 'http://10.10.10.2:8080/v1/AUTH_%(tenant_id)s' --adminurl 'http://10.10.10.2:8080/v1' --internalurl 'http://10.10.10.2:8080/v1/AUTH_%(tenant_id)s'
 </programlisting>
 <para>We now create the endpoint for keystone service. Note that the public port (for publicurl and internalurl) and admin port (for adminurl)  can be obtained from the keystone configuration file:</para>
 <programlisting>
-keystone endpoint-create --region myregion --service_id 7d4ec192dfa1456996f0f4c47415c7a7 --publicurl http://10.10.10.2:5000/v2.0 --adminurl http://10.10.10.2:35357/v2.0 --internalurl http://10.10.10.2:5000/v2.0
+keystone endpoint-create --region myregion --service_id $keystone-service-id --publicurl http://10.10.10.2:5000/v2.0 --adminurl http://10.10.10.2:35357/v2.0 --internalurl http://10.10.10.2:5000/v2.0
 </programlisting>
 <para>For creating an endpoint for ec2, execute the following command:</para>
 <programlisting>
-keystone endpoint-create --region myregion --service_id 28fd92ffe3824004996a3e04e059d875 --publicurl http://10.10.10.2:8773/services/Cloud --adminurl http://10.10.10.2:8773/services/Admin --internalurl http://10.10.10.2:8773/services/Cloud
+keystone endpoint-create --region myregion --service_id $ec2-service-id --publicurl http://10.10.10.2:8773/services/Cloud --adminurl http://10.10.10.2:8773/services/Admin --internalurl http://10.10.10.2:8773/services/Cloud
+</programlisting>
+<programlisting>
+keystone endpoint-create --region myregion --service-id $quantum-service-id --publicurl http://10.10.10.2:9696/ --adminurl http://10.10.10.2:9696/ --internalurl http://10.10.10.2:9696/
 </programlisting>
 </section>
 </section>
-
+<section>
+<title>OpenVswitch</title>
+<para>Install OpenVswitch</para>
+<programlisting>
+apt-get install -y openvswitch-switch openvswitch-datapath-dkms
+</programlisting>
+<para>Create the bridges need for OVS</para>
+<programlisting>
+ovs-vsctl add-br br-int
+ovs-vsctl add-br br-ex
+</programlisting>
+<para>Add the eth1 to the br-ex</para>
+<programlisting>ovs-vsctl add-port br-ex eth1</programlisting>
+</section>
+<section>
+<title>Quantum</title>
+<para>Install quantum server and other quantum components</para>
+<programlisting>apt-get install -y quantum-server quantum-plugin-openvswitch quantum-plugin-openvswitch-agent dnsmasq quantum-dhcp-agent quantum-l3-agent</programlisting>
+<para>Edit the following section in the file /etc/quantum/api-paste.ini to look like this</para>
+<programlisting>
+[filter:authtoken]
+paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
+auth_host = 10.10.10.2
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = service
+admin_user = quantum
+admin_password = quantum
+</programlisting>
+<para>Edit the following sections /etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini to look like this</para>
+<programlisting>
+[DATABASE]
+sql_connection = mysql://quantumUser:quantumPass@10.10.100.51/quantum
+[OVS]
+tenant_network_type = gre
+tunnel_id_ranges = 1:1000
+integration_bridge = br-int
+tunnel_bridge = br-tun
+local_ip = 192.168.3.1
+enable_tunneling = True
+[SECURITYGROUP]
+firewall_driver = quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver
+</programlisting>
+<para>Edit the file /etc/quantum/metadata_agent.ini to look like this</para>
+<programlisting>
+auth_url = http://10.10.100.51:35357/v2.0
+auth_region = myregion
+admin_tenant_name = service
+admin_user = quantum
+admin_password = quantum
+nova_metadata_ip = 127.0.0.1
+nova_metadata_port = 8775
+metadata_proxy_shared_secret = helloOpenStack
+</programlisting>
+<para>Edit the file /etc/quantum/quantum/conf</para>
+<programlisting>
+[keystone_authtoken]
+auth_host = 10.10.100.51
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = service
+admin_user = quantum
+admin_password = quantum
+signing_dir = /var/lib/quantum/keystone-signing
+</programlisting>
+<para>Restart all quantum services</para>
+<programlisting>
+restart quantum-dhcp-agent
+restart quantum-metadata-agent
+restart quantum-server
+restart quantum-l3-agent
+restart quantum-plugin-openvswitch-agent
+service dnsmasq restart
+</programlisting>
+</section>
 <section xml:id="Glance-d1a732">
 <title>Glance</title>    
 <para>Install glance using the following command:</para>
 <programlisting>
-sudo apt-get install -y glance 
+apt-get install -y glance 
 </programlisting>
 <section xml:id="Glance_Config-d1a734">
 <title>Glance Configuration</title>
@@ -391,95 +500,137 @@ flavor = keystone
 </programlisting>
 <para>Create glance schema in the MySQL database.:</para>
 <programlisting>
-sudo glance-manage db_sync
+glance-manage db_sync
 </programlisting>
 <para>Restart glance-api and glance-registry after making the above changes.</para>
-<programlisting>sudo restart glance-api</programlisting>
-<programlisting>sudo restart glance-registry</programlisting>
+<programlisting>restart glance-api</programlisting>
+<programlisting>restart glance-registry</programlisting>
 <para>Export the following environment variables.</para>
 <programlisting>
 export SERVICE_TOKEN=admin
 export OS_TENANT_NAME=admin
 export OS_USERNAME=admin
-export OS_PASSWORD=admin
+export OS_PASSWORD=ALPHABRAVO123
 export OS_AUTH_URL="http://localhost:5000/v2.0/"
 export SERVICE_ENDPOINT=http://localhost:35357/v2.0
 </programlisting>
 <para>Alternatively, you can add these variables to ~/.bashrc.</para>
-<para>To test if glance is setup correectly execute the following command.</para>
+<para>To test if glance is setup correctly execute the following command.</para>
 <programlisting>glance index</programlisting>
 <para>The above command will not return any output. The output of the last command executed can be known from its return code - echo $?. If the return code is zero, then glance is setup properly and connects with Keystone.</para>
 <para>With glance configured properly and using keystone as the authentication mechanism, now we can upload images to glance. This has been explained in detail in "Image Management" chapter.</para>
 </section>
 </section>
-
 <section xml:id="Nova-d1a736">
 <title>Nova</title>
 <para>Install nova using the following commands:</para>
-<programlisting>sudo apt-get install nova-api nova-cert nova-compute nova-compute-kvm nova-doc nova-network nova-objectstore nova-scheduler nova-volume rabbitmq-server novnc nova-consoleauth</programlisting>
+<programlisting>apt-get install nova-api nova-cert nova-compute nova-compute-kvm pm-utils nova-conductor nova-doc nova-scheduler rabbitmq-server novnc nova-vncproxy nova-consoleauth</programlisting>
+<section xml:id="kvm_conf-g35vfnf">
+<title>KVM Configuration</title>
+<para>Add the following line to /etc/libvirt/qemu.conf file</para>
+<programlisting>
+cgroup_device_acl = [
+"/dev/null", "/dev/full", "/dev/zero",
+"/dev/random", "/dev/urandom",
+"/dev/ptmx", "/dev/kvm", "/dev/kqemu",
+"/dev/rtc", "/dev/hpet","/dev/net/tun"
+]
+</programlisting>
+<para>Delete the default bridges created</para>
+<programlisting>
+virsh net-destroy default
+virsh net-undefine default
+</programlisting>
+<para>Edit the following line in libvirtd_opts variable in /etc/init/libvirt-bin.conf file to look like this</para>
+<programlisting>
+env libvirtd_opts="-d -l"
+</programlisting>
+<para>Edit the following line in  /etc/default/libvirt-bin file to look like this</para>
+<programlisting>
+libvirtd_opts="-d -l"
+</programlisting>
+<para>Restart libvirt-bin and dbus</para>
+<programlisting>
+service libvirt-bin restart
+service dbus restart
+</programlisting>
+</section>
 <section xml:id="Nova_Conf-d2s738">
 <title>Nova Configuration</title>
 <para>Edit the /etc/nova/nova.conf file to look like this.</para>
 <programlisting>
---dhcpbridge_flagfile=/etc/nova/nova.conf
---dhcpbridge=/usr/bin/nova-dhcpbridge
---logdir=/var/log/nova
---state_path=/var/lib/nova
---lock_path=/run/lock/nova
---allow_admin_api=true
---use_deprecated_auth=false
---auth_strategy=keystone
---scheduler_driver=nova.scheduler.simple.SimpleScheduler
---s3_host=10.10.10.2
---ec2_host=10.10.10.2
---rabbit_host=10.10.10.2
---cc_host=10.10.10.2
---nova_url=http://10.10.10.2:8774/v1.1/
---routing_source_ip=10.10.10.2
---glance_api_servers=10.10.10.2:9292
---image_service=nova.image.glance.GlanceImageService
---iscsi_ip_prefix=192.168.4
---sql_connection=mysql://novadbadmin:novasecret@10.10.10.2/nova
---ec2_url=http://10.10.10.2:8773/services/Cloud
---keystone_ec2_url=http://10.10.10.2:5000/v2.0/ec2tokens
---api_paste_config=/etc/nova/api-paste.ini
---libvirt_type=kvm
---libvirt_use_virtio_for_bridges=true
---start_guests_on_host_boot=true
---resume_guests_state_on_host_boot=true
-# vnc specific configuration
---novnc_enabled=true
---novncproxy_base_url=http://10.10.10.2:6080/vnc_auto.html
---vncserver_proxyclient_address=10.10.10.2
---vncserver_listen=10.10.10.2
-# network specific settings
---network_manager=nova.network.manager.FlatDHCPManager
---public_interface=eth0
---flat_interface=eth1
---flat_network_bridge=br100
---fixed_range=192.168.4.1/27
---floating_range=10.10.10.2/27
---network_size=32
---flat_network_dhcp_start=192.168.4.33
---flat_injected=False
---force_dhcp_release
---iscsi_helper=tgtadm
---connection_type=libvirt
---root_helper=sudo nova-rootwrap
---verbose
+[DEFAULT]
+logdir=/var/log/nova
+state_path=/var/lib/nova
+lock_path=/run/lock/nova
+verbose=True
+api_paste_config=/etc/nova/api-paste.ini
+compute_scheduler_driver=nova.scheduler.simple.SimpleScheduler
+rabbit_host=10.10.10.2
+nova_url=http://10.10.10.2:8774/v1.1/
+sql_connection=mysql://novaUser:novaPass@10.10.10.2/nova
+root_helper=sudo nova-rootwrap /etc/nova/rootwrap.conf
+
+# Auth
+use_deprecated_auth=false
+auth_strategy=keystone
+
+# Imaging service
+glance_api_servers=10.10.10.2:9292
+image_service=nova.image.glance.GlanceImageService
+
+# Vnc configuration
+novnc_enabled=true
+novncproxy_base_url=http://10.10.10.2:6080/vnc_auto.html
+novncproxy_port=6080
+vncserver_proxyclient_address=10.10.10.2
+vncserver_listen=0.0.0.0
+
+# Network settings
+network_api_class=nova.network.quantumv2.api.API
+quantum_url=http://10.10.10.2:9696
+quantum_auth_strategy=keystone
+quantum_admin_tenant_name=service
+quantum_admin_username=quantum
+quantum_admin_password=quantum
+quantum_admin_auth_url=http://10.10.10.2:35357/v2.0
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
+linuxnet_interface_driver=nova.network.linux_net.LinuxOVSInterfaceDriver
+#If you want Quantum + Nova Security groups
+firewall_driver=nova.virt.firewall.NoopFirewallDriver
+security_group_api=quantum
+#If you want Nova Security groups only, comment the two lines above and uncomment line -1-.
+#-1-firewall_driver=nova.virt.libvirt.firewall.IptablesFirewallDriver
+
+#Metadata
+service_quantum_metadata_proxy = True
+quantum_metadata_proxy_shared_secret = metadatasecret
+metadata_host = 10.10.10.2
+metadata_listen = 127.0.0.1
+metadata_listen_port = 8775
+
+# Compute #
+compute_driver=libvirt.LibvirtDriver
+
+# Cinder #
+volume_api_class=nova.volume.cinder.API
+osapi_volume_listen_port=5900
 </programlisting>
-<para>Create a Physical Volume.</para>
+
+<para>Edit the /etc/nova/nova-compute.conf:</para>
 <programlisting>
-sudo pvcreate /dev/sda6
+[DEFAULT]
+libvirt_type=kvm
+libvirt_ovs_bridge=br-int
+libvirt_vif_type=ethernet
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
+libvirt_use_virtio_for_bridges=True
 </programlisting>
-<para>Create a Volume Group named nova-volumes.</para>
-<programlisting>
-sudo vgcreate nova-volumes /dev/sda6
-</programlisting>
+
 <para>Change the ownership of the /etc/nova folder and permissions for /etc/nova/nova.conf:</para>
 <programlisting>
-sudo chown -R nova:nova /etc/nova
-sudo chmod 644 /etc/nova/nova.conf
+chown -R nova:nova /etc/nova
+chmod 644 /etc/nova/nova.conf
 </programlisting>
 <para>Open /etc/nova/api-paste.ini and at the end of the file, edit the following lines:</para>
 <programlisting>
@@ -493,46 +644,111 @@ admin_password = %SERVICE_PASSWORD%
 admin_tenant_name = service
 admin_user = nova
 admin_password = nova
+auth_version = v2.0
 </programlisting>
 </section>
 <para>Create nova schema in the MySQL database.</para>
-<programlisting>sudo nova-manage db sync</programlisting>
-<para>Provide a range of IPs to be associated to the instances.</para>
-<programlisting>
-sudo nova-manage network create private --fixed_range_v4=192.168.4.32/27 --num_networks=1 --bridge=br100 --bridge_interface=eth1 --network_size=32 
-</programlisting>
+<programlisting>nova-manage db sync</programlisting>
 <para>Export the following environment variables.</para>
 <programlisting>
 export OS_TENANT_NAME=admin
 export OS_USERNAME=admin
-export OS_PASSWORD=admin
+export OS_PASSWORD=ALPHABRAVO123
 export OS_AUTH_URL="http://localhost:5000/v2.0/"
 </programlisting>
 <para>Restart nova services.</para>
 <programlisting>
-sudo restart libvirt-bin; sudo restart nova-network; sudo restart nova-compute; sudo restart nova-api; sudo restart nova-objectstore; sudo restart nova-scheduler; sudo restart nova-volume; sudo restart nova-consoleauth;
+restart libvirt-bin
+restart nova-compute
+restart nova-api
+restart nova-scheduler
+restart nova-consoleauth
+restart nova-conductor
 </programlisting>
 <para>To test if nova is setup correctly run the following command.</para>
 <programlisting>
-sudo nova-manage service list
-Binary           Host              Zone             Status     State Updated_At
-nova-network     server1           nova             enabled    :-)   2012-04-20 08:58:43
-nova-scheduler   server1           nova             enabled    :-)   2012-04-20 08:58:44
-nova-volume      server1           nova             enabled    :-)   2012-04-20 08:58:44
-nova-compute     server1           nova             enabled    :-)   2012-04-20 08:58:45
-nova-cert        server1           nova             enabled    :-)   2012-04-20 08:58:43
+nova-manage service list
+</programlisting>
+<programlisting>
+Binary           Host                   Zone             Status     State Updated_At
+nova-cert        openstack-server1    internal         enabled    :-)   2013-07-25 05:16:13
+nova-conductor   openstack-server1    internal         enabled    :-)   2013-07-25 05:16:11
+nova-consoleauth openstack-server1    internal         enabled    :-)   2013-07-25 05:16:12
+nova-scheduler   openstack-server1    internal         enabled    :-)   2013-07-25 05:16:12
+nova-compute     openstack-server1    nova             enabled    :-)   2013-07-25 05:16:15
 </programlisting>
 <para>If the output is similar to the above with all components happy, your setup is ready to be used.</para>
 </section>
-
+<section>
+<title>Cinder</title>
+<para>Install the required packages</para>
+<programlisting>
+apt-get install cinder-api cinder-scheduler cinder-volume iscsitarget open-iscsi iscsitarget-dkms
+</programlisting>
+<para>Configure the iscsi services</para>
+<programlisting>
+sed -i 's/false/true/g' /etc/default/iscsitarget
+</programlisting>
+<para>start the Cinder service</para>
+<programlisting>
+service iscsitarget start
+service open-iscsi start
+</programlisting>
+<para>Edit the file /etc/cinder/api-paste.ini to look like this</para>
+<programlisting>
+[filter:authtoken]
+paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
+service_protocol = http
+service_host = 192.168.3.1
+service_port = 5000
+auth_host = 10.10.10.2
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = service
+admin_user = cinder
+admin_password = cinder
+signing_dir = /var/lib/cinder
+</programlisting>
+<para>Edit the file  /etc/cinder/cinder.conf to look like this</para>
+<programlisting>
+[DEFAULT]
+rootwrap_config=/etc/cinder/rootwrap.conf
+sql_connection = mysql://cinderUser:cinderPass@10.10.10.2/cinder
+api_paste_config = /etc/cinder/api-paste.ini
+iscsi_helper=ietadm
+volume_name_template = volume-%s
+volume_group = cinder-volumes
+verbose = True
+auth_strategy = keystone
+iscsi_ip_address=10.10.10.2 
+</programlisting>
+<para>Sync the database</para>
+<programlisting>
+cinder-manage db sync
+</programlisting>
+<para>Create a Physical Volume.</para>
+<programlisting>
+pvcreate /dev/sda6
+</programlisting>
+<para>Create a Volume Group named cinder-volumes.</para>
+<programlisting>
+vgcreate cinder-volumes /dev/sda6
+</programlisting>
+<para>Restart all Cinder services</para>
+<programlisting>
+restart cinder-api
+restart cinder-scheduler
+restart cinder-volume
+</programlisting>
+</section>
 <section xml:id="Openstack_Dashboard-d2s740">
 <title>OpenStack Dashboard</title>
 <para>Install OpenStack Dashboard by executing the following command:</para>
 <programlisting>
-sudo apt-get install openstack-dashboard
+apt-get install openstack-dashboard
 </programlisting>
 <para>Restart apache with the following command:</para>
-<programlisting>sudo service apache2 restart</programlisting>
+<programlisting>service apache2 restart</programlisting>
 <para>Open a browser and enter IP address of the server1. You should see the OpenStack Dashboard login prompt. Login with username 'admin' and password 'admin'. From the dashboard, you can create keypairs, create/edit security groups, raise new instances, attach volumes etc. which are explained in "OpenStack Dashboard" chapter.</para>
 </section>
 
@@ -542,7 +758,7 @@ sudo apt-get install openstack-dashboard
 <title>Swift Installation</title>
 <para>Install the primary components: proxy, account, container and object servers. Additionally install xfsprogs (for dealing with XFS filesystem), python.pastedeploy (for keystone access), curl (to test swift).</para>
 <programlisting>
-sudo apt-get install swift swift-proxy swift-account swift-container swift-object xfsprogs curl python-pastedeploy
+apt-get install swift swift-proxy swift-account swift-container swift-object xfsprogs curl python-pastedeploy
 </programlisting>
 </section>
 <section xml:id="Swift_Storage_Backends-d2s746">
@@ -555,7 +771,7 @@ sudo apt-get install swift swift-proxy swift-account swift-container swift-objec
 CAUTION: Replace /dev/sdb to your appropriate device. I'm assuming that there is an unused/un-formatted partition section in /dev/sdb
 </programlisting>
 <programlisting>
-sudo fdisk /dev/sdb
+fdisk /dev/sdb
 
     Type n for new partition
     Type e for extended partion
@@ -564,14 +780,14 @@ sudo fdisk /dev/sdb
     Note that 83 is the partition type number for Linux
     Type w to write changes to the disk 
 </programlisting>
-<para>This would have created a partition (something like /dev/sdb3) that we can now format to XFS filesystem. Do 'sudo fdisk -l' in the terminal to view and verify the partion table. Find the partition Make sure that the one that you want to use is listed there. This would work only if you have xfsprogs installed.</para>
+<para>This would have created a partition (something like /dev/sdb3) that we can now format to XFS filesystem. Do 'fdisk -l' in the terminal to view and verify the partion table. Find the partition Make sure that the one that you want to use is listed there. This would work only if you have xfsprogs installed.</para>
 <programlisting>
-sudo mkfs.xfs -i size=1024 /dev/sdb3
-sudo tune2fs -l /dev/sdb3 |grep -i inode
+mkfs.xfs -i size=1024 /dev/sdb3
+tune2fs -l /dev/sdb3 |grep -i inode
 </programlisting>
 <para>Create a directory /srv/swift_backend that can be used as a mount point to the partion that we created.</para>
 <programlisting>
-sudo mkdir /srv/swift_backend
+mkdir /srv/swift_backend
 </programlisting>
 <para>Now edit /etc/fstab and append the following line to mount the partition automatically everytime the system restarts.</para>
 <programlisting>
@@ -582,14 +798,14 @@ sudo mkdir /srv/swift_backend
 <title>Loopback File as a storage device</title>
 <para>We create a zero filled file for use as a loopback device for the Swift storage backend. Here we use the disk copy command to create a file named swift-disk and allocate a million 1KiB blocks (976.56 MiB) to it. So we have a loopback disk of approximately 1GiB. We can increase this size by modifying the seek value. The disk is then formated to XFS filesystem. The file command can be used to verify if it worked.</para>
 <programlisting>
-sudo dd if=/dev/zero of=/srv/swift-disk bs=1024 count=0 seek=1000000
-sudo mkfs.xfs -i size=1024 /srv/swift-disk
+dd if=/dev/zero of=/srv/swift-disk bs=1024 count=0 seek=1000000
+mkfs.xfs -i size=1024 /srv/swift-disk
 file /srv/swift-disk
 swift-disk1: SGI XFS filesystem data (blksz 4096, inosz 1024, v2 dirs)
 </programlisting>
 <para>Create a directory /srv/swift_backend that can be used as a mount point to the partion tha we created.</para>
 <programlisting>
-sudo mkdir /srv/swift_backend
+mkdir /srv/swift_backend
 </programlisting>
 <para>Make it mount on boot by appending this to /etc/fstab.</para>
 <programlisting>
@@ -600,19 +816,19 @@ sudo mkdir /srv/swift_backend
 <title>Using the backend</title>
 <para>Now before mounting the backend that will be used, create some nodes to be used as storage devices and set ownership to 'swift' user and group.</para>
 <programlisting>
-sudo mount /srv/swift_backend
+mount /srv/swift_backend
 pushd /srv/swift_backend
-sudo mkdir node1 node2 node3 node4
+mkdir node1 node2 node3 node4
 popd
 </programlisting>
 <programlisting>
-sudo mkdir -p /etc/swift/account-server /etc/swift/container-server /etc/swift/object-server /srv/swift_backend/node1/device /srv/swift_backend/node2/device /srv/swift_backend/node3/device /srv/swift_backend/node4/device mkdir /run/swift
-sudo chown -L -R swift.swift /etc/swift /srv/swift_backend /run/swift
+mkdir -p /etc/swift/account-server /etc/swift/container-server /etc/swift/object-server /srv/swift_backend/node1/device /srv/swift_backend/node2/device /srv/swift_backend/node3/device /srv/swift_backend/node4/device mkdir /run/swift
+chown -L -R swift.swift /etc/swift /srv/swift_backend /run/swift
 </programlisting>
 <para>Append the following lines in /etc/rc.local just before "exit 0";. This will be run everytime the system starts.</para>
 <programlisting>
-sudo mkdir /run/swift
-sudo chown swift.swift /run/swift
+mkdir /run/swift
+chown swift.swift /run/swift
 </programlisting>
 </section>
 </section>
@@ -709,7 +925,7 @@ lock file = /run/lock/object6040.lock
 </programlisting>
 <para>Restart rsync.</para>
 <programlisting>
-sudo service rsync restart
+service rsync restart
 </programlisting>
 </section>
 <section xml:id="Configure_Swift_Components-d2s752">
@@ -834,10 +1050,10 @@ vm_test_mode = no
 <para>For the other devices, (/srv/node2, /srv/node3, /srv/node4), we create 2.conf, 3.conf and 4.conf. So we make three more copies of 1.conf and set unique bind ports for the rest of the nodes (6022, 6032 and 6042) and different local log values (LOG_LOCAL3, LOG_LOCAL4, LOG_LOCAL5).</para>
 <programlisting>
 pushd /etc/swift/account-server/
-sudo tee 2.conf 3.conf 4.conf &lt; 1.conf
-sudo sed -i 's/6012/6022/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' 2.conf
-sudo sed -i 's/6012/6032/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' 3.conf
-sudo sed -i 's/6012/6042/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' 4.conf
+tee 2.conf 3.conf 4.conf &lt; 1.conf
+sed -i 's/6012/6022/g;s/LOCAL2/LOCAL3/g;s/node1/node2/g' 2.conf
+sed -i 's/6012/6032/g;s/LOCAL2/LOCAL4/g;s/node1/node3/g' 3.conf
+sed -i 's/6012/6042/g;s/LOCAL2/LOCAL5/g;s/node1/node4/g' 4.conf
 popd
 </programlisting>
 </section>
@@ -941,9 +1157,9 @@ vm_test_mode = no
 <para>NOTE: We need to be in the /etc/swift directory when executing the following commands.</para>
 <programlisting>
 pushd /etc/swift
-sudo swift-ring-builder object.builder create 18 3 1
-sudo swift-ring-builder container.builder create 18 3 1
-sudo swift-ring-builder account.builder create 18 3 1
+swift-ring-builder object.builder create 18 3 1
+swift-ring-builder container.builder create 18 3 1
+swift-ring-builder account.builder create 18 3 1
 </programlisting>
 <para>The numbers indicate the desired number of partitions, replicas and the time in hours to restrict moving a partition more than once. See the man page for swift-ring-builder for more information.</para>
 <para>Now we add zones and balance the rings. The syntax is as follows:</para>
@@ -952,21 +1168,21 @@ swift-ring-builder &lt;builder_file&gt; add &lt;zone&gt;-&lt;ip_address&gt;:&lt;
 </programlisting>
 <para>Execute the following commands to add the zones and rebalance the ring.</para>
 <programlisting>
-sudo swift-ring-builder object.builder add z1-127.0.0.1:6010/device 1
-sudo swift-ring-builder object.builder add z2-127.0.0.1:6020/device 1
-sudo swift-ring-builder object.builder add z3-127.0.0.1:6030/device 1
-sudo swift-ring-builder object.builder add z4-127.0.0.1:6040/device 1
-sudo swift-ring-builder object.builder rebalance
-sudo swift-ring-builder container.builder add z1-127.0.0.1:6011/device 1
-sudo swift-ring-builder container.builder add z2-127.0.0.1:6021/device 1
-sudo swift-ring-builder container.builder add z3-127.0.0.1:6031/device 1
-sudo swift-ring-builder container.builder add z4-127.0.0.1:6041/device 1
-sudo swift-ring-builder container.builder rebalance
-sudo swift-ring-builder account.builder add z1-127.0.0.1:6012/device 1
-sudo swift-ring-builder account.builder add z2-127.0.0.1:6022/device 1
-sudo swift-ring-builder account.builder add z3-127.0.0.1:6032/device 1
-sudo swift-ring-builder account.builder add z4-127.0.0.1:6042/device 1
-sudo swift-ring-builder account.builder rebalance
+swift-ring-builder object.builder add z1-127.0.0.1:6010/device 1
+swift-ring-builder object.builder add z2-127.0.0.1:6020/device 1
+swift-ring-builder object.builder add z3-127.0.0.1:6030/device 1
+swift-ring-builder object.builder add z4-127.0.0.1:6040/device 1
+swift-ring-builder object.builder rebalance
+swift-ring-builder container.builder add z1-127.0.0.1:6011/device 1
+swift-ring-builder container.builder add z2-127.0.0.1:6021/device 1
+swift-ring-builder container.builder add z3-127.0.0.1:6031/device 1
+swift-ring-builder container.builder add z4-127.0.0.1:6041/device 1
+swift-ring-builder container.builder rebalance
+swift-ring-builder account.builder add z1-127.0.0.1:6012/device 1
+swift-ring-builder account.builder add z2-127.0.0.1:6022/device 1
+swift-ring-builder account.builder add z3-127.0.0.1:6032/device 1
+swift-ring-builder account.builder add z4-127.0.0.1:6042/device 1
+swift-ring-builder account.builder rebalance
 </programlisting>
 </section>
 </section>
@@ -974,15 +1190,15 @@ sudo swift-ring-builder account.builder rebalance
 <title>Starting Swift services</title>
 <para>To start swift and the REST API, run the following commands.</para>
 <programlisting>
-sudo swift-init main start
-sudo swift-init rest start
+swift-init main start
+swift-init rest start
 </programlisting>
 </section>
 <section xml:id="Testing_Swift-d2s762">
 <title>Testing Swift</title>
 <para>Swift can be tested using the swift command or the dashboard web interface (Horizon). Firstly, make sure that the ownership for /etc/swift directory is set to swift.swift.</para>
 <programlisting>
-sudo chown -R swift.swift /etc/swift
+chown -R swift.swift /etc/swift
 </programlisting>
 <para>Then run the following command and verify if you get the appropriate account information. The number of containers and objects stored within are displayed as well.</para>
 <programlisting>
@@ -999,19 +1215,27 @@ X-Trans-Id: tx11c64e218f984749bc3ec37ea46280ee
 </section>
 </section>
 </section>
-
 <section xml:id="Server_2-d2s762">
 <title>Server2</title>
-<para>This server runs only nova-compute service. It contains two network interface cards (NICs).</para>
+<para>This server runs only nova-compute service. It contains two network interface cards(NICs).</para>
 <section xml:id="BaseOS-d1e1064">
 <title>BaseOS</title>
 <para>Install 64 bit version of Ubuntu server 12.04</para>
+<para>Install Ubuntu Key-ring Package</para>
+<programlisting>apt-get install ubuntu-cloud-keyring python-software-properties software-properties-common python-keyring</programlisting>
+<para>Add OpenStack grizzly repository</para>
+<programlisting>echo deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main >> /etc/apt/sources.list.d/grizzly.list</programlisting>
+<para>Update the machine using the following commands.</para>
+<programlisting>
+apt-get update
+apt-get upgrade
+</programlisting>
 </section>
 <section xml:id="Network_Configuration-d1e1073">
 <title>Network Configuration</title>
 <para>Install bridge-utils:</para>
-<programlisting>sudo apt-get install bridge-utils</programlisting>
-<para>Edit the /etc/network/interfaces file so as to looks like this:</para>
+<programlisting>apt-get install bridge-utils</programlisting>
+<para>Edit the /etc/network/interfaces file to looks like this</para>
 <programlisting>
 auto lo
 iface lo inet loopback
@@ -1032,90 +1256,175 @@ iface eth1 inet static
 		broadcast 192.168.3.255
 </programlisting>
 <para>Restart the network.</para>
-<programlisting>sudo /etc/init.d/networking restart</programlisting>
+<programlisting>/etc/init.d/networking restart</programlisting>
 </section>
 <section xml:id="NTP_Client-d1e1098">
 <title>NTP Client</title>
 <para>Install NTP package.</para>
-<programlisting>sudo apt-get install ntp</programlisting>
+<programlisting>apt-get install ntp</programlisting>
 <para>Open the file /etc/ntp.conf and add the following line to sync to server1.</para>
 <programlisting>server 10.10.10.2</programlisting>
 <para>Restart NTP service to make the changes effective</para>
-<programlisting>sudo service ntp restart</programlisting>
+<programlisting>service ntp restart</programlisting>
+</section>
+<section>
+<title>Quantum and OpenVswitch Installtion</title>
+<para>Install quantum-agent for openvswitch</para>
+<programlisting>
+apt-get -y install quantum-plugin-openvswitch-agent
+</programlisting>
+<para>Edit the file /etc/quantum/plugins/openvswitch/ovs_quantum_plugin.ini to look like this</para>
+<programlisting>
+[DATABASE]
+sql_connection = mysql://quantumUser:quantumPass@10.10.10.2/quantum
+[OVS]
+tenant_network_type = gre
+tunnel_id_ranges = 1:1000
+integration_bridge = br-int
+tunnel_bridge = br-tun
+local_ip = 192.168.3.2
+enable_tunneling = True
+[SECURITYGROUP]
+firewall_driver = quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver
+</programlisting>
+<para>Edit the file /etc/quantum/quantum.conf to look like this</para>
+<programlisting>
+rabbit_host = 10.10.10.2
+[keystone_authtoken]
+auth_host = 10.10.10.2
+auth_port = 35357
+auth_protocol = http
+admin_tenant_name = service
+admin_user = quantum
+admin_password = service_pass
+signing_dir = /var/lib/quantum/keystone-signing
+</programlisting>
+<para>Restart quantum services</para>
+<programlisting>
+restart quantum-plugin-openvswitch-agent
+</programlisting>
 </section>
 <section xml:id="Nova_Components_nova-compute_alone_-d1e1123">
 <title>Nova Components (nova-compute alone)</title>
 <para>Install the nova-components and dependencies.</para>
 <programlisting>
-sudo apt-get install nova-compute
+apt-get install nova-compute pm-utils
 </programlisting>
+<section>
+<title>KVM Configuration</title>
+<para>Add the following line to /etc/libvirt/qemu.conf file</para>
+<programlisting>
+cgroup_device_acl = [
+"/dev/null", "/dev/full", "/dev/zero",
+"/dev/random", "/dev/urandom",
+"/dev/ptmx", "/dev/kvm", "/dev/kqemu",
+"/dev/rtc", "/dev/hpet","/dev/net/tun"
+]
+</programlisting>
+<para>Delete the default bridges created</para>
+<programlisting>
+virsh net-destroy default
+virsh net-undefine default
+</programlisting>
+<para>Edit the following line in libvirtd_opts variable in /etc/init/libvirt-bin.conf file to look like this</para>
+<programlisting>
+env libvirtd_opts="-d -l"
+</programlisting>
+<para>Edit the following line in  /etc/default/libvirt-bin file to look like this</para>
+<programlisting>
+libvirtd_opts="-d -l"
+</programlisting>
+<para>Restart libvirt-bin and dbus</para>
+<programlisting>
+service libvirt-bin restart
+service dbus restart
+</programlisting>
+</section>
 <para>Edit the /etc/nova/nova.conf file to look like this. This file is identical to the configuration file (/etc/nova/nova.conf) of Server1</para>
 <programlisting>
---dhcpbridge_flagfile=/etc/nova/nova.conf
---dhcpbridge=/usr/bin/nova-dhcpbridge
---logdir=/var/log/nova
---state_path=/var/lib/nova
---lock_path=/run/lock/nova
---allow_admin_api=true
---use_deprecated_auth=false
---auth_strategy=keystone
---scheduler_driver=nova.scheduler.simple.SimpleScheduler
---s3_host=10.10.10.2
---ec2_host=10.10.10.2
---rabbit_host=10.10.10.2
---cc_host=10.10.10.2
---nova_url=http://10.10.10.2:8774/v1.1/
---routing_source_ip=10.10.10.2
---glance_api_servers=10.10.10.2:9292
---image_service=nova.image.glance.GlanceImageService
---iscsi_ip_prefix=192.168.4
---sql_connection=mysql://novadbadmin:novasecret@10.10.10.2/nova
---ec2_url=http://10.10.10.2:8773/services/Cloud
---keystone_ec2_url=http://10.10.10.2:5000/v2.0/ec2tokens
---api_paste_config=/etc/nova/api-paste.ini
---libvirt_type=kvm
---libvirt_use_virtio_for_bridges=true
---start_guests_on_host_boot=true
---resume_guests_state_on_host_boot=true
-# vnc specific configuration
---novnc_enabled=true
---novncproxy_base_url=http://10.10.10.2:6080/vnc_auto.html
---vncserver_proxyclient_address=10.10.10.2
---vncserver_listen=10.10.10.2
-# network specific settings
---network_manager=nova.network.manager.FlatDHCPManager
---public_interface=eth0
---flat_interface=eth1
---flat_network_bridge=br100
---fixed_range=192.168.4.1/27
---floating_range=10.10.10.2/27
---network_size=32
---flat_network_dhcp_start=192.168.4.33
---flat_injected=False
---force_dhcp_release
---iscsi_helper=tgtadm
---connection_type=libvirt
---root_helper=sudo nova-rootwrap
---verbose
+[DEFAULT]
+logdir=/var/log/nova
+state_path=/var/lib/nova
+lock_path=/run/lock/nova
+verbose=True
+api_paste_config=/etc/nova/api-paste.ini
+compute_scheduler_driver=nova.scheduler.simple.SimpleScheduler
+rabbit_host=10.10.10.2
+nova_url=http://10.10.10.2:8774/v1.1/
+sql_connection=mysql://novaUser:novaPass@10.10.10.2/nova
+root_helper=sudo nova-rootwrap /etc/nova/rootwrap.conf
+
+# Auth
+use_deprecated_auth=false
+auth_strategy=keystone
+
+# Imaging service
+glance_api_servers=10.10.10.2:9292
+image_service=nova.image.glance.GlanceImageService
+
+# Vnc configuration
+novnc_enabled=true
+novncproxy_base_url=http://10.10.10.2:6080/vnc_auto.html
+novncproxy_port=6080
+vncserver_proxyclient_address=10.10.10.3
+vncserver_listen=0.0.0.0
+
+# Network settings
+network_api_class=nova.network.quantumv2.api.API
+quantum_url=http://10.10.10.2:9696
+quantum_auth_strategy=keystone
+quantum_admin_tenant_name=service
+quantum_admin_username=quantum
+quantum_admin_password=service_pass
+quantum_admin_auth_url=http://10.10.10.2:35357/v2.0
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
+linuxnet_interface_driver=nova.network.linux_net.LinuxOVSInterfaceDriver
+#If you want Quantum + Nova Security groups
+firewall_driver=nova.virt.firewall.NoopFirewallDriver
+security_group_api=quantum
+#If you want Nova Security groups only, comment the two lines above and uncomment line -1-.
+#-1-firewall_driver=nova.virt.libvirt.firewall.IptablesFirewallDriver
+
+#Metadata
+service_quantum_metadata_proxy = True
+quantum_metadata_proxy_shared_secret = metadatasecret
+metadata_host = 10.10.10.2
+metadata_listen = 127.0.0.1
+metadata_listen_port = 8775
+
+# Compute #
+compute_driver=libvirt.LibvirtDriver
+
+# Cinder #
+volume_api_class=nova.volume.cinder.API
+osapi_volume_listen_port=5900
+</programlisting>
+<para>Edit the /etc/nova/nova-compute.conf:</para>
+<programlisting>
+[DEFAULT]
+libvirt_type=kvm
+libvirt_ovs_bridge=br-int
+libvirt_vif_type=ethernet
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
+libvirt_use_virtio_for_bridges=True
 </programlisting>
 <para>Restart nova-compute on Server2.</para>
-<programlisting>sudo service restart nova-compute</programlisting>
+<programlisting>service restart nova-compute</programlisting>
 <para>Check if the second compute node (Server2) is detected by running:</para>
-<programlisting>sudo nova-manage service list</programlisting>
+<programlisting>nova-manage service list</programlisting>
 <para>If you see an output similar to the following, it means that the set up is ready to be used.</para>
 <programlisting>
-sudo nova-manage service list
-Binary           Host              Zone             Status     State Updated_At
-nova-network     server1           nova             enabled    :-)   2012-04-20 08:58:43
-nova-scheduler   server1           nova             enabled    :-)   2012-04-20 08:58:44
-nova-volume      server1           nova             enabled    :-)   2012-04-20 08:58:44
-nova-compute     server1           nova             enabled    :-)   2012-04-20 08:58:45
-nova-cert        server1           nova             enabled    :-)   2012-04-20 08:58:43
-nova-compute     server2           nova             enabled    :-)   2012-04-21 10:22:27
+nova-manage service list
+</programlisting>
+<programlisting>
+Binary           Host                   Zone             Status     State Updated_At
+nova-cert        openstack-server1    internal         enabled    :-)   2013-07-25 05:16:13
+nova-conductor   openstack-server1    internal         enabled    :-)   2013-07-25 05:16:11
+nova-consoleauth openstack-server1    internal         enabled    :-)   2013-07-25 05:16:12
+nova-scheduler   openstack-server1    internal         enabled    :-)   2013-07-25 05:16:12
+nova-compute     openstack-server1    nova             enabled    :-)   2013-07-25 05:16:15
 </programlisting>
 </section>
-</section>
-
 <section xml:id="Client1-d1e1155">
 <title>Client1</title>
 <section xml:id="BaseOS-d1e1160">
@@ -1137,11 +1446,10 @@ auto eth0
 	dns-nameservers 10.10.8.3
 </programlisting>
 </section>
-
 <section xml:id="NTP_Client-d1e1181">
 <title>NTP Client</title>
 <para>Install NTP package.</para>
-<programlisting>sudo apt-get install -y ntp
+<programlisting>apt-get install -y ntp
 </programlisting>
 <para>Open the file /etc/ntp.conf and add the following line to sync to server1.</para>
 <programlisting>
@@ -1149,16 +1457,16 @@ server 10.10.10.2
 </programlisting>
 <para>Restart NTP service to make the changes effective</para>
 <programlisting>
-sudo service ntp restart
+service ntp restart
 </programlisting>
 </section>
 <section xml:id="Client_Tools-d1e1206">
 <title>Client Tools</title>
 <para>As mentioned above, this is a desktop installation of Ubuntu 12.04 to be used for tasks such as bundling of images. It will also be used for managing the cloud infrastructure using nova, glance and swift commandline tools.</para>
 <para>Install the required command line tools with the following command:</para>
-<programlisting>sudo apt-get install python-novaclient glance-client swift</programlisting>
+<programlisting>apt-get install python-novaclient glance-client swift</programlisting>
 <para>Install qemu-kvm</para>
-<programlisting>sudo apt-get install qemu-kvm</programlisting>
+<programlisting>apt-get install qemu-kvm</programlisting>
 <para>Export the following environment variables or add them to your ~/.bashrc.</para>
 <programlisting>
 export SERVICE_TOKEN=admin
@@ -1187,7 +1495,7 @@ ID                                   Name          Disk     Container Size
 f147e666-990c-47e2-9caa-a5a21470cc4e debian        qcow2    ovf       932904960
 f3a8e689-02ed-460f-a587-dc868576228f opensuse      qcow2    ovf       1072300032
 aa362fd9-7c28-480b-845c-85a5c38ccd86 centoscli     qcow2    ovf       1611530240
-49f0ec2b-26dd-4644-adcc-2ce047e281c5 ubuntuimage   qcow2    ovf       1471807488
+49f0ec2b-26dd-4644-adcc-2ce047e281c5 ubuntu        qcow2    ovf       1471807488
 </programlisting>
 </section>
 </section>
