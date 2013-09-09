@@ -53,4 +53,25 @@ nova boot --flavor 1 --image 9bab7ce7-7523-4d37-831f-c18fbc5cb543 --key_name myk
 
 <para>When you do not specify a security group, the instance gets associated with an inbuilt security group called "default". The rules for this security group can also be modified using nova secgroup-add-rule , nova secgroup-delete-rule commands.</para>
 </section>
+
+<section xml:id="Architecture_security">
+<title>Securing the Architecture</title>
+<para>Todo list below</para>
+<programlisting>
+* Database security
+** User / Host / IP
+** Passwords - MD5 hashing, etc.
+** Secure Database connections - SSL, etc.
+* Operating System Security
+** Firewall / IPTABLES
+** Basic system hardening
+** Update policy
+** Filesystem mount options
+* Service Security
+** Listen address:port 
+* Others
+** SSL certificates
+** ...
+</programlisting>
+</section>
 </chapter>
