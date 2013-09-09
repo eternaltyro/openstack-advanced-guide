@@ -37,3 +37,14 @@ Layout of the source:
 
 
 Bug reports on GitHub.
+
+#==TODO
+
+ * Security
+ ** MySQL password security PASSWORD('password')
+ ** pgSQL password security ENCRYPTED PASSWORD
+ ** Tokens
+ ** Force SSL
+ ** BASIC OS LEVEL SECURITY - Mount flags, Firewall, IPTABLES, etc.
+ * pgSQL admin
+ * 

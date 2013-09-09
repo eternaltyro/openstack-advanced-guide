@@ -83,9 +83,9 @@
 </itemizedlist>
 <para>We will also be running Cinder on this server and it is ideal to have a dedicated partition for the use of Cinder. So, ensure that you choose manual partitioning scheme while installing Ubuntu Server and create a dedicated partition with adequate amount of space for this purpose. We have referred to this partition in the rest of the chapter as /dev/sda6. You can substitute the correct device name of this dedicated partition based on your local setup while following the instructions. Also ensure that the partition type is set as Linux LVM (8e) using fdisk either during install or immediately after installation is over. If you also plan to use a dedicated partition as Swift backend, create another partition for this purpose and follow the instructions in "Swift Installation" section below.</para>
 <para>Install Ubuntu Key-ring Package</para>
-<programlisting>apt-get install ubuntu-cloud-keyring python-software-properties software-properties-common python-keyring</programlisting>
+<programlisting>sudo apt-get install ubuntu-cloud-keyring python-software-properties software-properties-common python-keyring</programlisting>
 <para>Add OpenStack grizzly repository</para>
-<programlisting>echo deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main >> /etc/apt/sources.list.d/grizzly.list</programlisting>
+<programlisting>echo 'deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main' sudo tee -a /etc/apt/sources.list.d/grizzly.list</programlisting>
 <para>Update the machine using the following commands.</para>
 <programlisting>
 apt-get update
@@ -137,10 +137,10 @@ fudge 127.127.1.0 stratum 10
 <para>You can use MySQL, PostgreSQL or SQLite for Nova and Glance. Depending upon your choice of database, you will need to install the necessary packages and configure the database server.</para>
 <section xml:id="MySQL-d1e856">
 <title>MySQL</title>
-<para>Install mysql-server and python-mysqldb package</para>
+<para>If you want to use PostgreSQL, ignore/skip this section and proceed to the PostgreSQL section. Install mysql-server and python-mysqldb package</para>
 <programlisting>apt-get install mysql-server python-mysqldb
 </programlisting>
-<para>Create the root password for mysql. The password used in this guide is "mygreatsecret"</para> 
+<para>Create the root password for MySQL. The password used in this guide is "mygreatsecret"</para> 
 <para>Change the bind address from 127.0.0.1 to 0.0.0.0 in /etc/mysql/my.cnf. It should be identical to this:</para>
 <programlisting>bind-address = 0.0.0.0
 </programlisting>
@@ -148,59 +148,83 @@ fudge 127.127.1.0 stratum 10
 <programlisting>restart mysql
 </programlisting>
 </section>
-<section xml:id="Creating_Databases-d1e921">
+<section xml:id="PostgreSQL-d1e859">
+<title>PostgreSQL</title>
+<para>If you want to use MySQL, ignore/skip this section. Install PostgreSQL server and python-psycopg2 which is the python module for PostgreSQL.</para>
+<programlisting>apt-get install postgresql python-psycopg2</programlisting>
+<para>Configuring PostgreSQL is similar to MySQL. But you have to become 'postgres' user for manipulating user details. Password for the administrative user postgres is set after the installation is complete.</para>
+<programlisting>
+sudo passwd postgres # set password for UNIX user 'postgres'
+sudo su - postgres
+psql
+postgres=# \password postgres
+Enter new password:
+Enter it again:
+</programlisting>
+</section>
+<section xml:id="Creating_Databases_Mysql-d1e921">
 <title>Creating Databases</title>
-<para>Create MySQL databases to be used with nova, glance and keystone. Run all the mysql commands as root.</para>
-<para>Create a database named nova.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE DATABASE nova';</programlisting>
-<para>Create a user named novadbadmin.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE USER novadbadmin;'</programlisting>
-<para>Grant all privileges for novadbadmin on the database "nova".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON nova.* TO 'novadbadmin'@'%';"</programlisting>
-<para>Create a password for the user "novadbadmin".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'novadbadmin'@'%' \
-= PASSWORD('novasecret');"</programlisting>
-<para>Create a database named glance.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE DATABASE glance;'</programlisting>
-<para>Create a user named glancedbadmin.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE USER glancedbadmin;'</programlisting>
-<para>Grant all privileges for glancedbadmin on the database "glance".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON glance.* TO \
-'glancedbadmin'@'%';"</programlisting>
-<para>Create a password for the user "glancedbadmin".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'glancedbadmin'@'%' \
-= PASSWORD('glancesecret');"</programlisting>
-<para>Create a database named keystone.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE DATABASE keystone;'</programlisting>
-<para>Create a user named keystonedbadmin.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE USER keystonedbadmin;'</programlisting>
-<para>Grant all privileges for keystonedbadmin on the database "keystone".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON keystone.* \
-TO 'keystonedbadmin'@'%';"</programlisting>
-<para>Create a password for the user "keystonedbadmin".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'keystonedbadmin'@'%' = \
-PASSWORD('keystonesecret');"</programlisting>
-<para>Create a database named cinder.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE DATABASE cinder';</programlisting>
-<para>Create a user named cinderdbadmin.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE USER cinderdbadmin;'</programlisting>
-<para>Grant all privileges for cinderdbadmin on the database "cinder".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON cinder.* TO 'cinderdbadmin'@'%';"</programlisting>
-<para>Create a password for the user "cinderdbadmin".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'cinderdbadmin'@'%' \
-= PASSWORD('cindersecret');"</programlisting>
-<para>Create a database named quantum.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE DATABASE quantum';</programlisting>
-<para>Create a user named quantumdbadmin.</para>
-<programlisting>mysql -uroot -pmygreatsecret -e 'CREATE USER quantumdbadmin;'</programlisting>
-<para>Grant all privileges for quantumdbadmin on the database "quantum".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON quantum.* TO 'quantumdbadmin'@'%';"</programlisting>
-<para>Create a password for the user "quantumdbadmin".</para>
-<programlisting>mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'quantumdbadmin'@'%' \
-= PASSWORD('quantumsecret');"</programlisting>
+<para>Create MySQL databases to be used with nova, glance, keystone, cinder, quantum and swift. We have chosen 'service'dbadmin as the database user for the services and the name of the service as the database name. So for nova, the database name is nova and the database user is novadbadmin and so on and so forth. The sequence of commands is database creation followed by user creation followed by setting user password followed by granting permissions for the user on the database.  Run
+all the mysql shell commands as UNIX user root.</para>
+<programlisting>
+mysql -uroot -pmygreatsecret -e 'CREATE DATABASE nova';
+mysql -uroot -pmygreatsecret -e 'CREATE USER novadbadmin;'
+mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON nova.* TO 'novadbadmin'@'%';"
+mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'novadbadmin'@'%' = PASSWORD('novasecret');"
+mysql -uroot -pmygreatsecret -e 'CREATE DATABASE glance;'
+mysql -uroot -pmygreatsecret -e 'CREATE USER glancedbadmin;'
+mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON glance.* TO 'glancedbadmin'@'%';"
+mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'glancedbadmin'@'%' = PASSWORD('glancesecret');"
+mysql -uroot -pmygreatsecret -e 'CREATE DATABASE keystone;'
+mysql -uroot -pmygreatsecret -e 'CREATE USER keystonedbadmin;'
+mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystonedbadmin'@'%';"
+mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'keystonedbadmin'@'%' = PASSWORD('keystonesecret');"
+mysql -uroot -pmygreatsecret -e 'CREATE DATABASE cinder';
+mysql -uroot -pmygreatsecret -e 'CREATE USER cinderdbadmin;'
+mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON cinder.* TO 'cinderdbadmin'@'%';"
+mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'cinderdbadmin'@'%' = PASSWORD('cindersecret');"
+mysql -uroot -pmygreatsecret -e 'CREATE DATABASE quantum';
+mysql -uroot -pmygreatsecret -e 'CREATE USER quantumdbadmin;'
+mysql -uroot -pmygreatsecret -e "GRANT ALL PRIVILEGES ON quantum.* TO 'quantumdbadmin'@'%';"
+mysql -uroot -pmygreatsecret -e "SET PASSWORD FOR 'quantumdbadmin'@'%' = PASSWORD('quantumsecret');"
+</programlisting>
+</section>
+<section xml:id="Creating_Databases_Postgres-d1e927">
+<para> Creating databases and users for nova, glance, keystone, cinder, quantum and swift. All the following commands have to be run as root user</para>
+<programlisting> 
+sudo -u postgres createuser -DRS novadbadmin
+sudo -u postgres createuser -DRS glancedbadmin
+sudo -u postgres createuser -DRS keystonedbadmin
+sudo -u postgres createuser -DRS cinderdbadmin
+sudo -u postgres createuser -DRS quantumdbadmin
+sudo -u postgres createuser -DRS swiftdbadmin
+sudo -u postgres psql -c "ALTER USER novadbadmin WITH ENCRYPTED PASSWORD 'novasecret';"
+sudo -u postgres psql -c "ALTER USER glancedbadmin WITH ENCRYPTED PASSWORD 'glancesecret';"
+sudo -u postgres psql -c "ALTER USER keystonedbadmin WITH ENCRYPTED PASSWORD 'keystonesecret';"
+sudo -u postgres psql -c "ALTER USER cinderdbadmin WITH ENCRYPTED PASSWORD 'cindersecret';"
+sudo -u postgres psql -c "ALTER USER quantumdbadmin WITH ENCRYPTED PASSWORD 'quantumsecret';"
+sudo -u postgres psql -c "ALTER USER swiftdbadmin WITH ENCRYPTED PASSWORD 'swiftsecret';"
+sudo -u postgres createdb nova
+sudo -u postgres createdb glance
+sudo -u postgres createdb keystone
+sudo -u postgres createdb cinder
+sudo -u postgres createdb quantum
+sudo -u postgres createdb swift
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE nova TO novadbadmin;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE glance TO glancedbadmin;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE keystone TO keystonedbadmin;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE cinder TO cinderdbadmin;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE quantum TO quantumdbadmin;"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE swift TO swiftdbadmin;"
+#sudo -u postgres psql -c "CREATE DATABASE -o novadbadmin nova;"
+#sudo -u postgres psql -c "CREATE DATABASE -o glancedbadmin glance;"
+#sudo -u postgres psql -c "CREATE DATABASE -o keystonedbadmin keystone;"
+#sudo -u postgres psql -c "CREATE DATABASE -o cinderdbadmin cinder;"
+#sudo -u postgres psql -c "CREATE DATABASE -o quantumdbadmin quantum;"
+#sudo -u postgres psql -c "CREATE DATABASE -o swiftdbadmin swift;"
+</programlisting>
 </section>
 </section>
-
 <section xml:id="Keystone-d1e456">
 <title>Keystone</title>
 <para>Keystone is the identity service used by OpenStack. Install Keystone using the following command.</para>
@@ -210,11 +234,12 @@ PASSWORD('keystonesecret');"</programlisting>
 <programlisting>admin_token = ADMIN</programlisting>
 <para>Set a secret token. Something like this:</para>
 <programlisting>admin_token = ALPHABRAVO123</programlisting>
-<para>(We have used 'ALPHABRAVO123' as the token in this book.)</para>
-<para>Since MySQL database is used to store keystone configuration, replace the following line in /etc/keystone/keystone.conf </para>
+<para>(We have used 'ALPHABRAVO123' as the token throughout this book.)</para>
+<para>Define a database connection appropriate to the database chosen by replacing the following line in /etc/keystone/keystone.conf </para>
 <programlisting>connection = sqlite:////var/lib/keystone/keystone.db</programlisting>
-<para>with</para>
+<para>with one of the following depending on the database:</para>
 <programlisting>connection = mysql://keystonedbadmin:keystonesecret@10.10.10.2/keystone</programlisting>
+<programlisting>connection = postgresql://keystonedbadmin:keystonesecret@10.10.10.2/keystone</programlisting>
 <para>Restart Keystone:</para>
 <programlisting>service keystone restart</programlisting>
 <para>Run the following command to synchronise the database:</para>
@@ -229,8 +254,8 @@ export SERVICE_TOKEN=ALPHABRAVO123
 <title>Creating Tenants</title>
 <para>Create the tenants by executing the following commands. In this case, we are creating two tenants - admin and service.</para> 
 <programlisting>
-keystone tenant-create --name admin
-keystone tenant-create --name service
+keystone tenant-create --name admin --description "Admin Tenant"
+keystone tenant-create --name service --description "Service Tenant"
 </programlisting>
 <para>Listing tenants</para>
 <programlisting>
@@ -248,11 +273,18 @@ keystone tenant-list
 <para>Create the users by executing the following commands. In this case, we are creating four users - admin, nova, glance and swift</para>
 <programlisting>
 keystone user-create --name admin --pass ALPHABRAVO123 --email admin@foobar.com --tenant_id $admin-tenant-id
-keystone user-create --name nova --pass nova --email nova@foobar.com --tenant_id $service-tenant-id
-keystone user-create --name glance --pass glance --email glance@foobar.com --tenant_id $service-tenant-id
-keystone user-create --name swift --pass swift --email swift@foobar.com --tenant_id $service-tenant-id
-keystone user-create --name cinder --pass cinder --email swift@foobar.com --tenant_id $service-tenant-id
-keystone user-create --name quantum --pass quantum --email swift@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name nova --pass nova --email compute@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name glance --pass glance --email images@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name swift --pass swift --email objstore@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name cinder --pass cinder --email volume@foobar.com --tenant_id $service-tenant-id
+keystone user-create --name quantum --pass quantum --email networking@foobar.com --tenant_id $service-tenant-id
+#keystone user-create --name horizon --pass horizon --email dashboard@foobar.com --tenant_id $service-tenant-id
+#keystone user-create --name ceilometer --pass ceilometer --email metering@foobar.com --tenant_id $service-tenant-id
+#keystone user-create --name trove --pass trove --email dbms@foobar.com --tenant_id $service-tenant-id
+#keystone user-create --name marconi --pass marconi --email queue@foobar.com --tenant_id $service-tenant-id
+#keystone user-create --name heat --pass heat --email orchestration@foobar.com --tenant_id $service-tenant-id
+#keystone user-create --name neutron --pass neutron --email networking@foobar.com --tenant_id $service-tenant-id
+
 </programlisting>
 <para>It is important to provide the tenant id the particular user belongs to. </para>
 <programlisting>
@@ -274,6 +306,7 @@ keystone user-list
 <programlisting>
 keystone role-create --name admin
 keystone role-create --name Member
+#keystone role-create --name ResellerAdmin
 </programlisting>
 <para>Listing Roles:</para>
 <programlisting>
@@ -336,6 +369,10 @@ keystone service-create --name keystone --type identity --description \
 keystone service-create --name quantum --type network --description \
 'OpenStack Networking service'
 keystone service-create --name ec2 --type ec2 --description 'EC2 Service'
+#keystone service-create --name trove --type database --description 'Openstack Database service'
+#keystone service-create --name marconi --type queue --description 'OpenStack Queue service'
+#keystone service-create --name quantum --type network --description 'OpenStack Networking service'
+#keystone service-create --name heat --type orchestration --description 'Openstack orchestration service'
 </programlisting>
 <para>Each of the services that have been created above will be identified with a unique id which can be obtained from the following command:</para>
 <programlisting>
