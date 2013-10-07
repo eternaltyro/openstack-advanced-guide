@@ -69,6 +69,10 @@ nova boot --flavor 1 --image 9bab7ce7-7523-4d37-831f-c18fbc5cb543 --key_name myk
 ** Filesystem mount options
 * Service Security
 ** Listen address:port 
+* Endpoint ports and interfaces
+** Which ports and interfaces should services listen to? 
+** When configuring database connections it can be sql:///localhost instead of sql:///public-ip
+** Admin endpoints vs. Internal endpoints?
 * Others
 ** SSL certificates
 ** ...
