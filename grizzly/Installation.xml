@@ -324,6 +324,12 @@ keystone role-list
 <para>Now we add roles to the users that have been created. A role to a specific user in a specific tenant can be assigned with the following command:</para>
 <programlisting>keystone user-role-add --user $USER_ID --role $ROLE_ID --tenant_id $TENANT_ID
 </programlisting>
+<para>#########################</para>
+<para>NEW EASIER COMMANDS BELOW</para>
+<para>Can use "NAME" instead of the long alphanumeric string ID for USER and TENANT now</para>
+<programlisting>keystone user-role-add --user $USER_NAME --tenant $TENANT_NAME --role $ROLE_ID
+</programlisting>
+<para>#########################</para>
 <para>The required 'id' can be obtained from the commands - keystone user-list, keystone tenant-list, keystone role-list.</para>
 <para>To add a role of 'admin' to the user 'admin' of the tenant 'admin'.</para>
 <programlisting>
@@ -343,6 +349,16 @@ keystone user-role-add --user $cinder-user-id \
 keystone user-role-add --user $swift-user-id \
 --role $admin-role-id --tenant_id $service-tenant-id
 </programlisting>
+<programlisting>
+###################################################
+keystone user-role-add --user nova --tenant service --role $admin-role-id
+keystone user-role-add --user glance --tenant service --role $admin-role-id
+keystone user-role-add --user quantum --tenant service --role $admin-role-id
+keystone user-role-add --user cinder --tenant service --role $admin-role-id
+keystone user-role-add --user swift --tenant service --role $admin-role-id
+keystone user-role-add --user admin --tenant admin --role $member-role-id
+###################################################
+</pgrogarmlisting>
 <para>The 'Member' role is used by Horizon(In our case "admin" user) and Swift. So add the 'Member' role accordingly.</para>
 <programlisting>
 keystone user-role-add --user $admin-user-id \
@@ -509,7 +525,7 @@ apt-get install -y glance
 <section xml:id="Glance_Config-d1a734">
 <title>Glance Configuration</title>
 <para>Glance uses SQLite by default. MySQL and PostgreSQL can also be configured to work with Glance.</para>
-<para>Open /etc/glance/ glance-api.conf and at the end of the file, edit the following lines:</para>
+<para>Open /etc/glance/glance-api.conf and at the end of the file, edit the following lines:</para>
 <programlisting>
 admin_tenant_name = %SERVICE_TENANT_NAME%
 admin_user = %SERVICE_USER%
@@ -525,12 +541,9 @@ admin_password = glance
 <para>Now open /etc/glance/glance-registry.conf and make similar changes at the end of the file.</para>
 <para>Open the file /etc/glance/glance-registry.conf and edit the line which contains the option "sql_connection =" to this:</para>
 <programlisting>sql_connection = mysql://glancedbadmin:glancesecret@10.10.10.2/glance</programlisting>
-<para>In order to tell glance to use keystone for authentication, enable #flavor = keystone option.</para>
-<programlisting>
-[paste_deploy]
-flavor = keystone
-</programlisting>
-<para>Open /etc/glance/glance-api.conf and enable  #flavor = keystone option .</para>
+<para>Or the following for PostgreSQL connections:</para>
+<programlisting>sql_connection = postgresql://glancedbadmin:glancesecret@10.10.10.2/glance</programlisting>
+<para>In order to tell glance to use keystone for authentication, enable #flavor = keystone option in both glance-registry.conf and glance-api.conf files.</para>
 <programlisting>
 [paste_deploy]
 flavor = keystone
