@@ -287,3 +287,10 @@ Restart PostgreSQL on the slave to check if replication is functional. Make some
 If the worst has happened and you need to failover to the standby server, you can do so by either creating the file /tmp/promoted as in the recovery.conf file or you can run the following command on the standby.
 
     $ pg_ctlcluster 9.3 main promote
+
+- TODO: Connection pooling / automatically pointing clients to the standby after failover,
+- TODO: Check pgpool2, repmgr https://github.com/2ndQuadrant/repmgr
+ 
+    $ sudo apt-get install pgpool2
+
+
