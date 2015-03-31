@@ -98,6 +98,8 @@ Restart PostgreSQL service
 
 Note: Swift block storage does not require any database connection.
 
+### If you are setting up database for fun or experimentation, you can safely skip the following paragraphs.
+
 ## Securing PostgreSQL
 
 These are to be taken only as guidelines and not expert recommendations. Do your own research before you follow any of these guidelines. If you are running PostgreSQL on production, you MUST NOT rely on the information below to secure your database. You could only use these as points of start. While it is certainly recommended that you use SSL and strong passwords and restrict traffic using firewalls, obviously, securing the database is much more complex than merely using SSL and strong passwords. Some basic stuff given below.
@@ -150,3 +152,71 @@ Strong passwords are passwords that are extremely difficult to guess with emphas
     FornIocOc4
 
 You could use a password management utility like 'keepassx' to store and manage the passwords. 
+
+## High-Availability
+
+There are several ways of ensuring high availability in PostgreSQL. But the most common method is to setup a streaming replication among servers. In this scheme, there's one active master server and multiple slave replicas. The master ships the Write Ahead Logs (WAL) to a shared location or to a location on the slave hosts, and continuously keep streaming WALs that the slaves use to replicate data. You can promote a slave to a master server in the event a master server goes
+down. During replication, a slave can also cater to read queries from users. This is called 'hot standby'. Let us look at how to set up a simple single slave replica setup.
+
+#### ASSUMPTIONS
+
+- Replicas are named replica1, replica2, etc.
+- Replicas bear IP address in the 10.1.7.0/24 CIDR
+- The replicas and the master have all the hostnames in the /etc/hosts file
+
+## Installing slave replicas
+
+Slave replicas are installed just like the master server. They have appropriate server configuration file and pg_hba.conf file. Any special configuration parameters pertaining to replication for the master or slaves will be discussed below.
+
+## Establishing connectivity between the master and slave servers
+
+We need to establish seamless connectivity between the master and slaves. We need to be able to transfer files via rsync and let the slave servers connect to the master database server over port 5432.
+
+### SSH connectivity
+
+On the master server, create an SSH key.
+
+    $ ssh-keygen
+    Generating public/private rsa key pair.
+    Enter file in which to save the key (/var/lib/postgresql/.ssh/id_rsa):
+    Enter passphrase (empty for no passphrase): 
+    Enter same passphrase again: 
+    Your identification has been saved in /var/lib/postgresql/.ssh/id_rsa.
+    Your public key has been saved in /var/lib/postgresql/.ssh/id_rsa.pub.
+    The key fingerprint is:
+    75:88:2b:94:47:21:6d:11:c0:c6:b1:f3:cb:af:2e:f8 postgres@master
+    The key's randomart image is:
+    +--[ RSA 2048]----+
+    |     o++=+       |
+    |      +=o. .     |
+    |     .=.o o .    |
+    |     . + o .     |
+    |      . S        |
+    |       o .       |
+    |     .  o        |
+    |    . .  .       |
+    |     .Eoo..      |
+    +-----------------+
+
+Note that we don't supply a passphrase. So just press enter key when prompted for it. Now we need to send it to all the slave replica.
+
+    $ ssh-copy-id -i ~/.ssh/id_rsa.pub postgres@10.1.7.2
+    postgres@10.1.7.2's password:
+
+Repeat this for each replica. Now let's set up the host based authentication for the servers. Add the following line to the pg_hba.conf file
+
+    host    replication    argusfilch    10.1.7.0/24    trust
+
+This trusts all connections to the database _replication_ from user _argusfilch_ from network 10.1.7.0/24 which is dedicated for the database servers. This could potentially be a security risk and you should consider using md5 in place of trust. 
+
+## Preparing the master server
+
+We create a user specifically for replication since this user need not be superuser. We give this user permission to access a special database for replication called... replication! I have named the user _argusfilch_ after the infamous grumpy caretaker from the Harry Potter book series. 
+
+On the master server, edit the postgresql.conf directory to set the following parameters:
+
+    wal_level = hot_standby
+    archive_mode = on
+    archive_command = 'rsync -W -az %p postgres@$SLAVE_IP_HERE:/pgdata/WAL_Archive/'
+    max_wal_senders = 6 
+    wal_keep_segments = 100 
