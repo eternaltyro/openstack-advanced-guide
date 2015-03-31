@@ -258,7 +258,32 @@ Now let us edit the postgresql.conf file. We could copy over the master's postgr
     max_standby_streaming_delay = 1min
     hot_standby_feedback = on
 
-Restart PostgreSQL on the slave to check if replication is functional. Make some changes in the master server and check if it's being propagated in time.
+Restart PostgreSQL on the slave to check if replication is functional. Make some changes in the master server and check if it's being propagated in time. You can also check the replication status using SQL.
 
     $ pg_ctlcluster 9.3 main restart
+    $ psql
+    postgres=# \x
+    Expanded display is on.
+    postgres=# select * from pg_stat_replication;
+    -[ RECORD 1 ]----+------------------------------
+    pid              | 30417
+    usesysid         | 16764
+    usename          | argusfilch
+    application_name | walreceiver
+    client_addr      | 10.1.7.2
+    client_hostname  | 
+    client_port      | 41615
+    backend_start    | 2015-03-31 03:37:19.060136+00
+    state            | streaming
+    sent_location    | 0/21014358
+    write_location   | 0/21014358
+    flush_location   | 0/21014358
+    replay_location  | 0/21014358
+    sync_priority    | 0
+    sync_state       | async
 
+## Failover
+
+If the worst has happened and you need to failover to the standby server, you can do so by either creating the file /tmp/promoted as in the recovery.conf file or you can run the following command on the standby.
+
+    $ pg_ctlcluster 9.3 main promote
