@@ -23,7 +23,7 @@ Set password for postgres user in Ubuntu
     Retype new UNIX password:
     passwd: password updated successfully
 
-Switch user to postgres
+Switch user to postgres. From now on, everything (except iptables) is done as *postgres* user and NOT ROOT!
 
     $ su postgres
     Password: 
@@ -118,7 +118,7 @@ Ciphers for SSL need to be configured to use strong encryption with preference f
 
 ### Configuring Firewall
 
-We could tightly configure the firewall to allow traffic only from the machines that host openstack components plus essential services like DNS and system update servers. 
+We could tightly configure the firewall to allow traffic only from the machines that host openstack components plus essential services like DNS and system update servers. Note: Do everything in this section as root. After you are done, switch back to being postgres.
 
     # iptables -A OUTPUT -p udp -s 10.0.0.2/32 -d DNSHOST/32 --dport 53 -j ACCEPT
     # iptables -A INPUT -p udp -s 0/0 --sport 53 -d 10.0.0.2/32 -j ACCEPT
@@ -203,20 +203,62 @@ Note that we don't supply a passphrase. So just press enter key when prompted fo
     $ ssh-copy-id -i ~/.ssh/id_rsa.pub postgres@10.1.7.2
     postgres@10.1.7.2's password:
 
-Repeat this for each replica. Now let's set up the host based authentication for the servers. Add the following line to the pg_hba.conf file
+Repeat this for each replica. Now let's set up the host based authentication for the servers. We can authorize individual servers or an entire CIDR depending on requirements Add the following lines to the pg_hba.conf file:
 
     host    replication    argusfilch    10.1.7.0/24    trust
+    host    replication    argusfilch    10.1.7.2/32    trust
 
-This trusts all connections to the database _replication_ from user _argusfilch_ from network 10.1.7.0/24 which is dedicated for the database servers. This could potentially be a security risk and you should consider using md5 in place of trust. 
+This trusts all connections to the database _replication_ from user _argusfilch_ from network 10.1.7.0/24 which is dedicated for the database servers. This could potentially be a security risk and you should consider using md5 in place of trust. Now let us create the user __argusfilch__ which can do replication.
 
-## Preparing the master server
+    postgres=# create role argusfilch password 'mrsnorris' LOGIN REPLICATION;
 
 We create a user specifically for replication since this user need not be superuser. We give this user permission to access a special database for replication called... replication! I have named the user _argusfilch_ after the infamous grumpy caretaker from the Harry Potter book series. 
 
-On the master server, edit the postgresql.conf directory to set the following parameters:
+## Preparing the master server
+
+Let us set up replication on the master server. Here, we set the archival level and the command to be executed "to" archive the WALs. Edit the postgresql.conf directory to set the following parameters:
 
     wal_level = hot_standby
     archive_mode = on
-    archive_command = 'rsync -W -az %p postgres@$SLAVE_IP_HERE:/pgdata/WAL_Archive/'
+    archive_command = 'rsync -W -az %p postgres@10.1.7.2:/var/lib/postgresql/walarchive/'
     max_wal_senders = 6 
-    wal_keep_segments = 100 
+    wal_keep_segments = 100
+
+Where hot_standby means the archival is quicker than usual. archive_command is basically any command that ships the WALs to a location that is easily accessible by the slave servers. In this example, we have used rsync to copy the WAL files to a directory on the slaves postgres home directory. Note: The directory must exists and MUST be empty the first time the command runs. So on the slave, run the following commands to create a directory accessible by postgres user on that server:
+
+    $ mkdir -m 0755 -p /var/lib/postgresql/walarchive
+    $ chown -R postgres:postgres /var/lib/postgresql/walarchive
+
+Now let us restart the master PostgreSQL server. You should begin seeing the _walarchive_ directory populated once restart is complete.
+
+    $ pg_ctlcluster 9.3 main restart
+
+## Preparing the slave servers
+
+Login to the slave servers and use the pg_basebackup tool to copy a base backup of the master server into the postgres data directory of all the slaves.
+
+    $ pg_basebackup -D /var/lib/postgresql/9.3/main -F p -X s -h 10.1.7.1 -p 5432 -U argusfilch -w 
+
+We should now have a data directory that is populated. Now that we have a basic point-in-time backup of the master server, we have to let the slave know how to connect to the master server to recieve a continuous stream of data and change logs. For this, we create a file called _recovery.conf_ under the PostgreSQL data directory and populate it like so:
+
+    standby_mode = on
+    trigger_file = '/tmp/promoted'
+    primary_conninfo = 'host=10.1.7.1 port=5432 user=argusfilch password=mrsnorris'
+    restore_command = 'cp /var/lib/postgresql/walarchive/%f "%p"' >> /var/lib/postgresql/restore.log 2>&1
+    recovery_target_timeline = 'latest'
+
+There are certain risks to be concerned. One is the plain text password. This can be skipped when using 'trust' in pg_hba.conf of the master server. Second is the data growth of both the WAL files and the log file. The logs need to be rotated. Note: There are some interesting pg tools in /usr/lib/postgresql/9.x/bin.
+
+TODO: WAL Archive cleanup.
+
+Now let us edit the postgresql.conf file. We could copy over the master's postgresql.conf file and modify it if we want. Set the value according to your network speed. 
+
+    hot_standby = on 
+    max_standby_archive_delay = 1min   
+    max_standby_streaming_delay = 1min
+    hot_standby_feedback = on
+
+Restart PostgreSQL on the slave to check if replication is functional. Make some changes in the master server and check if it's being propagated in time.
+
+    $ pg_ctlcluster 9.3 main restart
+
