@@ -4,6 +4,12 @@ Keystone takes care of user access management to different OpenStack components.
 
 For example, `Manager` and `Developer` may be the roles present in a system with the manager role holding the privilege to create and delete users and developer role merely being able to access compute and storage components. Then, a user alice whose assigned role is Manager will automatically be able to create new users. A user Bob whose assigned role is Developer will only be able to create and delete new instances. 
 
+## AuthZ / AuthN
+
+## Keystone Concepts
+
+Project and Tenants are the same.
+
 ## Installing keystone
 
 The following commands install keystone, keystone client and the python bindings for PostgreSQL.
@@ -51,6 +57,9 @@ Where 10.10.10.2 is the database node on which PostgreSQL server is listening.
     $ python
     >>> import keystone
     >>>
+
+Request Headers: Accept: application/json, X-Auth-Token: mygreatadminsecret
+POST Req Headers: Accept: application/json, X-Auth-Token: mygreatadminsecret, Content-Type: application/json
 
 ## Running Keystone over WSGI
 
@@ -103,4 +112,19 @@ Where 10.10.10.2 is the database node on which PostgreSQL server is listening.
     dependency.resolve_future_dependencies()
     EOF
 
+## Tokens
 
+UUID - 32 character tokens
+PKI - Signed tokens (CMS) Cryptographic Message Syntax defined by IETF RFC-5652
+keystone commands use v2
+use wireshark
+
+
+## Token Exchange
+
+Wireshark pegs 5000 as IPA port GSM over IP
+35357 is proper openstack-id 
+
+Request Token via POST to v3/auth/tokens with JSON payload.
+response is a JSON with token supplied in header X-Subject-Token: 72b224a51f7142b1a77334d5c43e6939
+Use token for further stuff
