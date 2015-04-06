@@ -6,9 +6,11 @@ For example, `Manager` and `Developer` may be the roles present in a system with
 
 ## AuthZ / AuthN
 
+Authentication and Authorization are two different concepts, and understanding them would help much in debugging and troubleshooting. Authentication is establishing the identity of the user. Authorization is the privilege a user has to access and utilize certain resources. Simply put, proving you are who you claim you are is authentication. Authorization is granting permission to access something. 
+
 ## Keystone Concepts
 
-Project and Tenants are the same.
+Project and Tenants are the same. Domains, users, roles and groups. 
 
 ## Installing keystone
 
@@ -30,6 +32,8 @@ Where 10.10.10.2 is the database node on which PostgreSQL server is listening.
 
 ### Starting Keystone
 
+    keystone-all
+    service keystone start
 
 ## Testing keystone
 
@@ -38,9 +42,6 @@ Where 10.10.10.2 is the database node on which PostgreSQL server is listening.
 
 
 ## Authenticating against LDAP
-
-
-## Authenticating against Kerberos
 
 
 ## Keystone Security
@@ -114,17 +115,59 @@ POST Req Headers: Accept: application/json, X-Auth-Token: mygreatadminsecret, Co
 
 ## Tokens
 
-UUID - 32 character tokens
-PKI - Signed tokens (CMS) Cryptographic Message Syntax defined by IETF RFC-5652
-keystone commands use v2
+Keystone deals two kinds of tokens depending on architecture of the deployment. 
+
+### UUID Tokens
+
+These are simple 32 character hexadecimal tokens.
+
+- A privileged user sends credentials (username:password) along with the scope of the token required to Keystone. 
+- Keystone validates the user credentials and role assignments against the backend (PostgreSQL)
+- Once authenticated and authorized, Keystone generates a unique 32digit alpha numeric token and sends it back to the user along with a service catalog that the user has access to.
+- The service catalog is sent in the response payload and the token is sent as a HTTP response header variable.
+- The User then sends the token along with the service request (operation) to an OpenStack service.
+- The service validates the token against Keystone ( backend lookup, yada yada all over again )
+- Once Keystone gives the go ahead, the service performs the operation and sends the confirmation back to the user.
+
+As you can see, this is network intensive and does not scale well since each request performs multiple database lookups and validations. To make it easier on the network, we could use PKI tokens.
+
+### PKI / PKIZ Tokens
+
+These are signed tokens in CMS format (Cryptographic Message Syntax defined by IETF RFC-5652). 
+
+- A privileged user sends credentials along with scope to keystone
+- Keystone validates the credentials against backend
+- Keystone then creates a CMS token which is a message digest containing the user role assignments, service catalog and meta data. 
+- The token is then cryptographically signed using Keystone's TLS certificate and Key.
+- The token is `base64 endcoded` and sent to the user who sends it to the service endpoints along with a service request
+- The service uses a cached copy of Keystone's signing cert and verifies / validates the Certificate by itself.
+- The service then looks up the revocation list to see if the certificate had been revoked
+- Once all validations pass, the service request is carried out and the confirmation sent to the user.
+
+#### Pros: 
+
+- As it is obvious, the PKI token verifications are done offline locally by the services themselves and not by Keystone everytime. This relieves the network of considerable traffic.
+- Tokens can be compressed using zlib, called PKIZ Tokens which are smaller than PKI tokens.
+
+#### Cons:
+
+- TLS certs and keys need to be set up. But this can be done using the `keystone-manage pki_setup` command for evaluation purposes.
+- The token size is considerably larger than the UUID tokens
+
+### Using Let's Encrypt to create and install certificates (EXPERIMENTAL)
+
+    $ sudo apt-get install lets-encrypt
+    $ sudo ./lets-encrypt --text --agree-eula mysecureopenstack.com
+
+keystone commands use v2.0 or v3 depending on what the endpoint is
 use wireshark
 
 
 ## Token Exchange
 
-Wireshark pegs 5000 as IPA port GSM over IP
-35357 is proper openstack-id 
+Wireshark pegs 5000 as IPA port `GSM over IP`
+35357 is proper `openstack-id` 
 
-Request Token via POST to v3/auth/tokens with JSON payload.
-response is a JSON with token supplied in header X-Subject-Token: 72b224a51f7142b1a77334d5c43e6939
+Request Token via `POST` to `/v3/auth/tokens` with JSON payload.
+response is a JSON with token supplied in header like so: `X-Subject-Token: 72b224a51f7142b1a77334d5c43e6939`
 Use token for further stuff
